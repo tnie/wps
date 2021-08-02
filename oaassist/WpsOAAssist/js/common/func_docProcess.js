@@ -151,9 +151,11 @@ function pOpenFile(doc, params, isOnlineDoc) {
     // 把WPS对象置前
     wps.WpsApplication().WindowState=1;
     wps.WpsApplication().Activate();
+    if(params.isSilent){
+        _WpsInvoke([])
+    }
     return doc;
 }
-
 
 
 /**
@@ -182,7 +184,9 @@ function GetServerTemplateData(template, pTemplateDataUrl) {
             var data = res;
             let Bookmarks = template.Bookmarks;
             data.forEach(function(it) {
-
+                if(!Bookmarks.Exists(it.name)){//书签不存在，直接退出这循环
+                    return ;
+                }
                 var bookmark = Bookmarks.Item(it.name);
                 let bookStart = bookmark.Range.Start;
                 let bookEnd = bookmark.Range.End;
@@ -213,9 +217,15 @@ function GetServerTemplateData(template, pTemplateDataUrl) {
                     }
                 }
                 var selection=wps.WpsApplication().ActiveWindow.Selection;
-                selection.Start=bookmark.Range.End-(bookEnd-bookStart);
-                selection.End=bookmark.Range.End;
-                selection.Cut()
+                if (bookmark.Range.Text) {
+                    selection.Start = bookmark.Range.End - (bookEnd - bookStart);
+                    selection.End = bookmark.Range.End;
+                    selection.Cut();
+                } else {
+                    selection.Start = bookmark.Range.End;
+                    selection.End = bookmark.Range.End+it.text.length;
+                    Bookmarks.Add(bookmark.Name, selection.Range);
+                }
             })
         }
     });
@@ -511,9 +521,15 @@ function handleFileAndUpload(suffix, doc, uploadPath, FieldName) {
     //          Const wdExportFormatPDF = 17 (&H11)
     //          Const wdExportFormatXPS = 18 (&H12)
     //
-
+    l_strPath = pGetValidDocTempPath(doc) + suffix;
+    wps.FileSystem.Remove(l_strPath); //先删除之前可能存在的临时文件
+    doc.ExportAsFixedFormat(l_strPath, wps.Enum&&wps.Enum.wdFormatOpenDocumentText||23, true); //转换文件格式
+    doc.SaveAs2(l_strPath,returnFormatType(l_strPath));
+    l_strChangeFileName = doc.Name.split(".")[0] + suffix;
+    UploadFile(l_strChangeFileName, l_strPath, uploadPath, l_FieldName, OnChangeSuffixUploadSuccess, OnChangeSuffixUploadFail);
+    doc.SaveAs2(l_DocSourcePath,returnFormatType(l_DocSourcePath)); //保存回原来的文档内容
     //根据传入的 后缀文件名称进行不同的转换文档操作
-    switch (suffix.toLocaleLowerCase()) {
+    /*switch (suffix.toLocaleLowerCase()) {
         case '.pdf':
             l_strPath = pGetValidDocTempPath(doc) + ".pdf"; //获取有效输出路径
             wps.FileSystem.Remove(l_strPath); //先删除之前可能存在的临时文件
@@ -556,7 +572,7 @@ function handleFileAndUpload(suffix, doc, uploadPath, FieldName) {
             UploadFile(l_strChangeFileName, l_strPath, uploadPath, l_FieldName, OnChangeSuffixUploadSuccess, OnChangeSuffixUploadFail);
             doc.SaveAs2(l_DocSourcePath); //保存回原来的文档内容
             break;
-    }
+    }*/
 
     wps.FileSystem.Remove(l_strPath); //上载完成后，删除临时文件
     return true;
@@ -771,7 +787,7 @@ function InsertRedHead(params) {
  *  strFile ：获取红头模板接口
  *  bookmark ：,正文书签
  */
-function pInsertRInedHead(doc, strFile, bookmark) {
+function pInsertRInedHead(doc, strFile, bookmark,callback) {
     var bookMarks = doc.Bookmarks;
     if (bookMarks.Item("quanwen")) { // 当前文档存在"quanwen"书签时候表示已经套过红头
         alert("当前文档已套过红头，请勿重复操作!");
@@ -785,18 +801,12 @@ function pInsertRInedHead(doc, strFile, bookmark) {
     activeDoc.TrackRevisions = false;
     selection.WholeStory(); //选取全文
     bookMarks.Add("quanwen", selection.Range)
-    selection.Cut();
-    selection.InsertFile(strFile);
-    if (bookMarks.Exists(bookmark)) {
-        var bookmark1 = bookMarks.Item(bookmark);
-        bookmark1.Range.Select(); //获取指定书签位置
-        var s = activeDoc.ActiveWindow.Selection;
-        s.Paste();
-    } else {
-        alert("套红头失败，您选择的红头模板没有对应书签：" + bookmark);
-    }
-
+    InsertFile(strFile, bookmark, activeDoc, InsertRedHeadAfter,callback)
+}
+function InsertRedHeadAfter() {
     // 轮询插入书签
+    var doc = wps.WpsApplication().ActiveDocument;
+    var bookMarks=doc.Bookmarks;
     var elements = GetDocParamsValue(doc, constStrEnum.redFileElement);
     if (elements != "") {
         for (var key in elements) {
@@ -810,10 +820,10 @@ function pInsertRInedHead(doc, strFile, bookmark) {
     }
 
     // 恢复修订模式(根据传入参数决定)
-    var l_revisionCtrl = GetDocParamsValue(activeDoc, constStrEnum.revisionCtrl);
-    activeDoc.TrackRevisions = l_revisionCtrl == "" ? false : l_revisionCtrl.bOpenRevision;
+    var l_revisionCtrl = GetDocParamsValue(doc, constStrEnum.revisionCtrl);
+    doc.TrackRevisions = l_revisionCtrl == "" ? false : l_revisionCtrl.bOpenRevision;
     //取消WPS关闭时的提示信息
-    wps.WpsApplication().DisplayAlerts = wps.Enum&&wps.Enum.wdAlertsNone||0;
+    wps.WpsApplication().DisplayAlerts = wps.Enum && wps.Enum.wdAlertsNone || 0;
 }
 /**
  * 从OA-web端点击套红头
@@ -821,7 +831,7 @@ function pInsertRInedHead(doc, strFile, bookmark) {
  *      'insertFileUrl':'',获取红头模板接口
  *      'bkInsertFile':'' ,正文书签
  */
-function InsertRedHeadDoc(doc) { //插入红头
+function InsertRedHeadDoc(doc,afterInsertCallBack) { //插入红头
     if (!doc) {
         alert('文档不存在!');
         return;
@@ -838,7 +848,7 @@ function InsertRedHeadDoc(doc) { //插入红头
         return;
     }
 
-    pInsertRInedHead(doc, strFile, bookmark)
+    pInsertRInedHead(doc, strFile, bookmark,afterInsertCallBack)
 }
 
 /**

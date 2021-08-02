@@ -359,7 +359,7 @@ function pGetParamName(data, attr) {
  * @param {*} request 
  * @param {*} url 
  */
-function pGetFileName(request, url) {
+ function pGetFileName(request, url) {
     var disposition = request.getResponseHeader("Content-Disposition");
     var filename = "";
     if (disposition) {
@@ -370,10 +370,12 @@ function pGetFileName(request, url) {
             filename = "petro" + Date.getTime();
         }
     } else {
-        var filename = url.substring(url.lastIndexOf("/") + 1);
+        filename = url.substring(url.lastIndexOf("/") + 1);
+        filename=filename.split("?")[0]
     }
     return filename;
 }
+
 
 function StringToUint8Array(string) {
     var binLen, buffer, chars, i, _i;
@@ -385,23 +387,62 @@ function StringToUint8Array(string) {
     }
     return buffer;
 }
+//套红
+function InsertFile(url,bookmark,activeDoc,callback,callback1){ 
+    DownloadFile(url,function(url){
+        wps.WpsApplication().Options.PasteFormatBetweenStyledDocuments=0//跨文档保存时，设置保存源文档格式
+        var selection=activeDoc.ActiveWindow.Selection;
+        selection.WholeStory();
+        selection.Cut();
+        var doc=wps.WpsApplication().Documents.Open(url,undefined,undefined,undefined,undefined,undefined,undefined,undefined,undefined,undefined,undefined,false);
+        //var doc1 = wps.WpsApplication().ActiveDocument;
+        var selection1=doc.ActiveWindow.Selection;
+        var bookMarks=doc.Bookmarks;
+        if (bookMarks.Exists(bookmark)) {
+            var bookmark1 = bookMarks.Item(bookmark);
+            bookmark1.Range.Select(); //获取指定书签位置
+            // selection1.InsertBreak(3)
+            selection.PasteAndFormat(16)
+        } else {
+            alert("套红头失败，您选择的红头模板没有对应书签：" + bookmark);
+        }
+          selection.PageSetup.TopMargin=selection1.PageSetup.TopMargin
+          selection.PageSetup.BottomMargin=selection1.PageSetup.BottomMargin
+          selection.PageSetup.LeftMargin=selection1.PageSetup.LeftMargin
+          selection.PageSetup.RightMargin=selection1.PageSetup.RightMargin
+
+         selection1.WholeStory();
+         selection1.Copy();
+         activeDoc.Activate()
+         doc.Close(0);
+         selection.WholeStory()
+        //  selection.InsertBreak(3)//插入连续分节符
+         selection.PasteAndFormat(16)
+        callback&&callback();
+        callback1&&callback1();
+    },undefined,true)
+    
+}
+
+
 /**
  * WPS下载文件到本地打开（业务系统可根据实际情况进行修改）
  * @param {*} url 文件流的下载路径
  * @param {*} callback 下载后的回调
  */
-function DownloadFile(url, callback) {
+function DownloadFile(url, callback, fileName, isDelete) {
     var xhr = new XMLHttpRequest();
     xhr.onreadystatechange = function () {
         if (this.readyState == 4 && this.status == 200) {
             //需要业务系统的服务端在传递文件流时，确保请求中的参数有filename
-            var fileName = pGetFileName(xhr, url)
+            fileName = fileName ? fileName : pGetFileName(xhr, url)
             //落地打开模式下，WPS会将文件下载到本地的临时目录，在关闭后会进行清理
             var path = wps.Env.GetTempPath() + "/" + fileName
             var reader = new FileReader();
             reader.onload = function () {
                 wps.FileSystem.writeAsBinaryString(path, reader.result);
                 callback(path);
+                isDelete && wps.FileSystem.Remove(path)
             };
             reader.readAsBinaryString(xhr.response);
         }
@@ -410,6 +451,8 @@ function DownloadFile(url, callback) {
     xhr.responseType = 'blob';
     xhr.send();
 }
+
+
 /**
  * WPS上传文件到服务端（业务系统可根据实际情况进行修改，为了兼容中文，服务端约定用UTF-8编码格式）
  * @param {*} strFileName 上传到服务端的文件名称（包含文件后缀）
@@ -532,3 +575,92 @@ function SetDocParamsValue(Doc, Key, Value) {
     //把属性值整体再写回原来的文档ID中
     wps.PluginStorage.setItem(Doc.DocID, JSON.stringify(l_objParams));
 }
+//返回文件对应的类型
+function returnFormatType(newName){
+    var typeList=[{
+        type:"ofd",
+        value:102
+    },{
+        type:"dot",
+        value:1
+    },{
+        type:"txt",
+        value:2
+    },{
+        type:"rtf",
+        value:6
+    },{
+        type:"html",
+        value:8
+    },{
+        type:"mht",
+        value:9
+    },{
+        type:"htm",
+        value:10
+    },{
+        type:"xml",
+        value:11
+    },{
+        type:"docx",
+        value:12
+    },{
+        type:"docm",
+        value:13
+    },{
+        type:"dotx",
+        value:14
+    },{
+        type:"dotm",
+        value:15
+    },{
+        type:"doc",
+        value:16
+    },{
+        type:"pdf",
+        value:1
+    },{
+        type:"uot",
+        value:1
+    },{
+        type:"uof",
+        value:111
+    }]
+    let splitArr=newName.split(".")
+    let newType=splitArr[splitArr.length-1];
+    let formatType=12;
+    typeList.map((item)=>{
+        if(item.type==newType){
+            formatType=item.value
+        }
+    })
+    return formatType;
+}
+
+function rgbToColor(r,g,b){
+    var a="0x"+toO(b)+toO(g)+toO(r);
+    return Number(a);
+}
+function toO(num,bs=16){
+    if(num>=bs){
+        return num.toString(bs)
+    }else{
+        return "0"+num.toString(bs)
+    }
+}
+function _WpsInvoke(funcs, front, jsPluginsXml,isSlient) {
+    var info = {};
+    info.funcs = funcs;    
+    var func = WpsInvoke.InvokeAsHttp
+    WpsInvoke.InvokeAsHttp("wps",// 组件类型
+        "WpsOAAssist", // 插件名，与wps客户端加载的加载的插件名对应
+        "dispatcher", // 插件方法入口，与wps客户端加载的加载的插件代码对应，详细见插件代码
+        info, // 传递给插件的数据        
+        function (result) { // 调用回调，status为0为成功，其他是错误
+           
+        },
+        front,//这个参数是控制着通过页面执行WPS加载项方法，WPS的界面是否在执行时在前台显示
+        jsPluginsXml,
+        isSlient)
+}
+

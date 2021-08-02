@@ -38,16 +38,16 @@ function selectTemplate() {
     if (base == undefined) { //未配置则模拟服务端返回
         SetDocParamsValue(activeDoc, "insertFileUrl", getDemoTemplatePath());
         SetDocParamsValue(activeDoc, "bkInsertFile", "Content");
-        InsertRedHeadDoc(activeDoc);
-        window.opener = null;
-        window.open('', '_self', '');
-        window.close();
+        InsertRedHeadDoc(activeDoc,afterInsert);
         return
     }
     var path = base + redId;
     SetDocParamsValue(activeDoc, "insertFileUrl", path);
-    InsertRedHeadDoc(activeDoc);
+    InsertRedHeadDoc(activeDoc,afterInsert);
 
+    
+}
+function afterInsert(){
     window.opener = null;
     window.open('', '_self', '');
     
