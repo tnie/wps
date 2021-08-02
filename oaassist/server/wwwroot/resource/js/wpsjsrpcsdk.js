@@ -615,7 +615,6 @@
         else
             window.location.href = "ksoWPSCloudSvr://start=RelayHttpServer" + "&serverId=" + serverId //是否启动wps弹框
     }
-
     /**
      * 获取serverId的接口
      * @returns serverId
@@ -1307,6 +1306,7 @@
     }
 
     /**
+<<<<<<< HEAD
      * 禁用所有加载项
      * @param {*} element 
      * @param {*} callBack 
@@ -1316,6 +1316,8 @@
     }
 
     /**
+=======
+>>>>>>> 823d1346fb952fbfa05dfa5824620245dac73af9
      * 生成json格式的数据
      * @param {*} element   参数对象
      * @param {*} cmd       具体操作，enable / disable / disableall
