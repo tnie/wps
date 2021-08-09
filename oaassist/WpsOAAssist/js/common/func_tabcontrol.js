@@ -525,9 +525,9 @@ function pSaveAnotherDoc(p_Doc) {
 
 
 //保存到OA后台服务器
-function OnBtnSaveToServer() {
+function OnBtnSaveToServer(doc) {
     // console.log('SaveToServer');
-    var l_doc = wps.WpsApplication().ActiveDocument;
+    var l_doc = doc?doc:wps.WpsApplication().ActiveDocument;
     if (!l_doc) {
         alert("空文档不能保存！");
         return;
@@ -1081,7 +1081,7 @@ function OnAction(control) {
                     OnBtnSaveToServer();
                 } else { //本地的文档，期望不做自定义，通过转调idMso的方法实现
                     // wps.WpsApplication().CommandBars.ExecuteMso("FileSave");
-                    wps.WpsApplication().CommandBars.ExecuteMso("SaveAll");
+                  wps.Application.ActiveDocument.Save()
                     //此处一定不能去调用与重写idMso相同的ID，否则就是个无线递归了，即在这个场景下不可调用FileSaveAs和FileSaveAsMenu这两个方法
                 }
                 break;

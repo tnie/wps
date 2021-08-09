@@ -152,7 +152,7 @@ function pOpenFile(doc, params, isOnlineDoc) {
     wps.WpsApplication().WindowState=1;
     wps.WpsApplication().Activate();
     if(params.isSilent){
-        _WpsInvoke([])
+        _WpsInvoke([],true)
     }
     return doc;
 }

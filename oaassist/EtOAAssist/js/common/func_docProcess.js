@@ -221,6 +221,10 @@ function SetOADocProtect(doc, ProtectPassword) {
     // 保护文档如果之前有被保护，再次保护会出问题，需要先解除保护
     doc.Unprotect();
     doc.Protect(ProtectPassword);
+    // let count=doc.WorkSheets.Count;
+    // for(let i=1;i<=count;i++){
+    //     doc.WorkSheets.Item(i).Protect(ProtectPassword);
+    // }
     return;
 }
 

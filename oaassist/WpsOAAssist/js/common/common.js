@@ -313,7 +313,9 @@ function closeWpsIfNoDocument() {
 function activeTab() {
     //启动WPS程序后，默认显示的工具栏选项卡为ribbon.xml中某一tab
     if (wps.ribbonUI)
-        wps.ribbonUI.ActivateTab('WPSWorkExtTab');
+    
+    wps.ribbonUI.ActivateTab('TabReviewWord');
+        // wps.ribbonUI.ActivateTab('WPSWorkExtTab');
 }
 
 function showOATab() {
@@ -402,7 +404,7 @@ function InsertFile(url,bookmark,activeDoc,callback,callback1){
             var bookmark1 = bookMarks.Item(bookmark);
             bookmark1.Range.Select(); //获取指定书签位置
             // selection1.InsertBreak(3)
-            selection.PasteAndFormat(16)
+            selection1.PasteAndFormat(16)
         } else {
             alert("套红头失败，您选择的红头模板没有对应书签：" + bookmark);
         }
@@ -650,14 +652,16 @@ function toO(num,bs=16){
 }
 function _WpsInvoke(funcs, front, jsPluginsXml,isSlient) {
     var info = {};
-    info.funcs = funcs;    
-    var func = WpsInvoke.InvokeAsHttp
+    info.funcs = funcs;
     WpsInvoke.InvokeAsHttp("wps",// 组件类型
         "WpsOAAssist", // 插件名，与wps客户端加载的加载的插件名对应
         "dispatcher", // 插件方法入口，与wps客户端加载的加载的插件代码对应，详细见插件代码
         info, // 传递给插件的数据        
         function (result) { // 调用回调，status为0为成功，其他是错误
-           
+           if(front){
+            _WpsInvoke([]);//二次调用，确保置顶
+
+           }
         },
         front,//这个参数是控制着通过页面执行WPS加载项方法，WPS的界面是否在执行时在前台显示
         jsPluginsXml,
