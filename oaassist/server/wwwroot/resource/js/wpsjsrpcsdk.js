@@ -615,6 +615,7 @@
         else
             window.location.href = "ksoWPSCloudSvr://start=RelayHttpServer" + "&serverId=" + serverId //是否启动wps弹框
     }
+
     /**
      * 获取serverId的接口
      * @returns serverId
@@ -741,7 +742,7 @@
                     var idx3
                     var idx4
                     var data
-                    if(!HeartBeatWorker || idx1 != -1) {
+                    if(idx1 != -1) {
                         idx1 = idx1 + 8
                         idx2 = str.indexOf("\"data\"") - 2
                         paramStr.messageId = parseInt(str.substring(idx1, idx2))
@@ -1365,5 +1366,5 @@
         window.WpsAddonMgr = WpsAddonMgr;
     }
 
-    return { WpsInvoke: WpsInvoke, WpsAddonMgr: WpsAddonMgr, version: "1.0.26" };
+    return { WpsInvoke: WpsInvoke, WpsAddonMgr: WpsAddonMgr, version: "1.0.27" };
 });

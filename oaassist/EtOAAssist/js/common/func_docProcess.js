@@ -211,7 +211,10 @@ function pDoOpenOADocProcess(params, TempLocalFile) {
 }
 
 /**
- * protectType: '', 文档保护模式
+ * protectType: '', 文档保护模式,表格文件的保护分为WorkSheet保护和Workbook保护
+ * Workbook保护：限制文档新增和删除WorkSheet
+ * WorkSheet保护：限制文档编辑
+ * 
  * @param {*} ProtectPassword 
  * @param {*} doc 
  */
@@ -220,11 +223,11 @@ function SetOADocProtect(doc, ProtectPassword) {
 
     // 保护文档如果之前有被保护，再次保护会出问题，需要先解除保护
     doc.Unprotect();
-    doc.Protect(ProtectPassword);
-    // let count=doc.WorkSheets.Count;
-    // for(let i=1;i<=count;i++){
-    //     doc.WorkSheets.Item(i).Protect(ProtectPassword);
-    // }
+    doc.Protect(ProtectPassword);//
+    let count=doc.Worksheets.Count;
+    for(let i=1;i<=count;i++){
+        doc.Worksheets.Item(i).Protect(ProtectPassword);
+    }
     return;
 }
 
