@@ -169,10 +169,10 @@ function OnRevisionsSwitch(doc, openRevisions) {
             //WPS 显示从文本到修订和批注气球之间的连接线
             v.RevisionsBalloonShowConnectingLines = openRevisions;
         }
-        if (openRevisions == true) {
-            //去掉修改痕迹信息框中的接受修订和拒绝修订勾叉，使其不可用
-            wps.WpsApplication().CommandBars.ExecuteMso("KsoEx_RevisionCommentModify_Disable");
-        }
+        // if (openRevisions == true) {
+        //     //去掉修改痕迹信息框中的接受修订和拒绝修订勾叉，使其不可用
+        //     wps.WpsApplication().CommandBars.ExecuteMso("KsoEx_RevisionCommentModify_Disable");
+        // }
 
         //RevisionsMode:
         //wdBalloonRevisions	0	在左边距或右边距的气球中显示修订。
