@@ -709,9 +709,6 @@
             var xhr = getHttpObj()
             xhr.onload = function (e) {
                 if (xhr.responseText == "WPSInnerMessage_quit" || xhr.status != 200) {
-                    if(!wpsclient){
-                        window.setTimeout(askItem, 2000)
-                    }
                     return;
                 }
                 window.setTimeout(askItem, 300)

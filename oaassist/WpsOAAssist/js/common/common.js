@@ -9,7 +9,10 @@ var OA_DOOR = {
     bookmarkPath: undefined, //书签列表接口
     redHeadsPath: undefined, //默认红头模板列表获取路径
 }
-
+//OA系统单独触发置顶函数
+function handleShowToFront(data){
+   console.log(data)
+}
 // --------------------------  通用方法  ---------------------------
 //去除字符串左边空格
 String.prototype.ltrim = function () {
@@ -431,6 +434,8 @@ function InsertFile(url,bookmark,activeDoc,callback,callback1){
  * WPS下载文件到本地打开（业务系统可根据实际情况进行修改）
  * @param {*} url 文件流的下载路径
  * @param {*} callback 下载后的回调
+ * @param {*} fileName 自定义文件名称
+ * @param {*} isDelete 操作完成后，是否删除本地文件
  */
 function DownloadFile(url, callback, fileName, isDelete) {
     var xhr = new XMLHttpRequest();
@@ -650,7 +655,7 @@ function toO(num,bs=16){
         return "0"+num.toString(bs)
     }
 }
-function _WpsInvoke(funcs, front, jsPluginsXml,isSlient) {
+function _WpsInvoke(funcs, front) {
     var info = {};
     info.funcs = funcs;
     WpsInvoke.InvokeAsHttp("wps",// 组件类型

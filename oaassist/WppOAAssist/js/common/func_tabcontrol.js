@@ -322,8 +322,18 @@ function GetParamsValue(Params, Key) {
 }
 
 function OnAction(control) {
-    var strId = typeof (control) == "object" ? control.Id : control;
-    switch (strId) {
+    var eleId;
+    if (typeof control == "object" && arguments.length == 1) { //针对Ribbon的按钮的
+        eleId = control.Id;
+    } else if (typeof control == "undefined" && arguments.length > 1) { //针对idMso的
+        eleId = arguments[1].Id;
+        console.log(eleId)
+    } else if (typeof control == "boolean" && arguments.length > 1) { //针对checkbox的
+        eleId = arguments[1].Id;
+    } else if (typeof control == "number" && arguments.length > 1) { //针对combox的
+        eleId = arguments[2].Id;
+    }
+    switch (eleId) {
         case "btnSaveToServer":
             OnBtnSaveToServer();
             break;

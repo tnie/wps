@@ -170,40 +170,26 @@ function DownloadFile(url, callback) {
     xhr.send();
 }
 
-function UploadFile(strFileName, strPath, uploadPath, strFieldName, OnSuccess, OnFail) {
+/**
+ * WPS上传文件到服务端（业务系统可根据实际情况进行修改，为了兼容中文，服务端约定用UTF-8编码格式）
+ * @param {*} strFileName 上传到服务端的文件名称（包含文件后缀）
+ * @param {*} strPath 上传文件的文件路径（文件在操作系统的绝对路径）
+ * @param {*} uploadPath 上传文件的服务端地址
+ * @param {*} strFieldName 业务调用方自定义的一些内容可通过此字段传递，默认赋值'file'
+ * @param {*} OnSuccess 上传成功后的回调
+ * @param {*} OnFail 上传失败后的回调
+ */
+ function UploadFile(strFileName, strPath, uploadPath, strFieldName, OnSuccess, OnFail) {
     var xhr = new XMLHttpRequest();
     xhr.open('POST', uploadPath);
 
-    function KFormData() {
-        this.fake = true;
-        this.boundary = "--------FormData" + Math.random();
-        this._fields = [];
-    }
-    KFormData.prototype.append = function (key, value) {
-        this._fields.push([key, value]);
-    }
-    KFormData.prototype.toString = function () {
-        var boundary = this.boundary;
-        var body = "";
-        this._fields.forEach(function (field) {
-            body += "--" + boundary + "\r\n";
-            if (field[1].name) {
-                var file = field[1];
-                body += "Content-Disposition: form-data; name=\"" + field[0] + "\"; filename=\"" + file.name + "\"\r\n";
-                body += "Content-Type: " + file.type + "\r\n\r\n";
-                body += file.getAsBinary() + "\r\n";
-            } else {
-                body += "Content-Disposition: form-data; name=\"" + field[0] + "\";\r\n\r\n";
-                body += field[1] + "\r\n";
-            }
-        });
-        body += "--" + boundary + "--";
-        return body;
-    }
     var fileData = wps.FileSystem.readAsBinaryString(strPath);
-    var data = new KFormData();
-    data.append('file', {
-        name: strFileName,
+    var data = new FakeFormData();
+    if (strFieldName == "" || typeof strFieldName == "undefined"){//如果业务方没定义，默认设置为'file'
+        strFieldName = 'file';
+    }
+    data.append(strFieldName, {
+        name: utf16ToUtf8(strFileName), //主要是考虑中文名的情况，服务端约定用utf-8来解码。
         type: "application/octet-stream",
         getAsBinary: function () {
             return fileData;

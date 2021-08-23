@@ -125,6 +125,12 @@ function pOpenFile(doc, params, isOnlineDoc) {
     pDoResetRibbonGroups();
     // 触发切换窗口事件
     OnWindowActivate();
+    if(params.isSilent){
+        var showToFrontMessage={
+            ShowToFront:true
+        }
+        wps.OAAssist.WebNotify(JSON.stringify(showToFrontMessage),true)
+    }
     return doc;
 }
 

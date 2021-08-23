@@ -11,6 +11,7 @@ var clientStr = pluginName + pluginType + "ClientId"
  * @param {*} front         控制着通过页面执行WPS加载项方法，WPS的界面是否在执行时在前台显示
  * @param {*} jsPluginsXml  指定一个新的WPS加载项配置文件的地址,动态传递jsplugins.xml模式，例如：http://127.0.0.1:3888/jsplugins.xml
  * @param {*} isSilent      隐藏打开WPS，如果需要隐藏，那么需要传递front参数为false
+ * @param {*} fontTryCount  置顶尝试次数
  */
 
 
@@ -30,15 +31,15 @@ function _WpsInvoke(funcs, front, jsPluginsXml,isSilent) {
     } else {//多进程
         multInvoke(info,front,jsPluginsXml,isSilent)
     }
-
 }
 
 //单进程
 function singleInvoke(info,front,jsPluginsXml,isSilent){
+    
     WpsInvoke.InvokeAsHttp(pluginType, // 组件类型
         pluginName, // 插件名，与wps客户端加载的加载的插件名对应
         "dispatcher", // 插件方法入口，与wps客户端加载的加载的插件代码对应，详细见插件代码
-        info, // 传递给插件的数据        
+        info, // 传递给插件的数据       
         function (result) { // 调用回调，status为0为成功，其他是错误
             if (result.status) {
                 if (result.status == 100) {
@@ -62,7 +63,6 @@ function singleInvoke(info,front,jsPluginsXml,isSilent){
      * WPS客户端返回消息： wps.OAAssist.WebNotify（message）
      * @param {*} type 加载项对应的插件类型
      * @param {*} name 加载项对应的名字
-     * @param {func} callback 接收到WPS客户端的消息后的回调函数，参数为接受到的数据
      */
     WpsInvoke.RegWebNotify(pluginType, pluginName, handleOaMessage)
 }
@@ -94,7 +94,6 @@ function mult(info,front){
             if (result.status !== 0) {
                 if (result.message == "Failed to send message to WPS.") {
                     wpsClient.IsClientRunning(function (status) {
-                        console.log(status)
                         if (status.response == "Client is running.")
                             alert("任务发送失败，WPS 正在执行其他任务，请前往WPS完成当前任务")
                         else {
@@ -118,9 +117,16 @@ function mult(info,front){
         front)
 }
 function handleOaMessage(data) {
-    console.log(data)
+    if(data&&typeof data=="object"){
+        if(data.ShowToFront){
+            alert(111)
+            _WpsInvoke([],true);
+            setTimeout(function(){
+                _WpsInvoke([],true);
+            },2000)
+        }
+    }
 }
-
 function handleOaFunc1(message) {
     alert("我是函数handleOaFunc1，我接收到的参数是：" + message)
 }

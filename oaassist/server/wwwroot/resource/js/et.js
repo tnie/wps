@@ -18,6 +18,11 @@ var clientStr = pluginName + pluginType + "ClientId"
 
 function _WpsInvoke(funcs, front, jsPluginsXml,isSilent) {
     var info = {};
+    if(isSilent){
+        var sendKey=Object.keys(funcs[0])
+        funcs[0][sendKey].isSilent=true;//如果隐藏打开，则在参数中设置一个隐藏打开参数， 方便在文档打开后，根据该参数将WPS显示出来
+        front=false;//隐藏启动时，front必须为false
+    }
     info.funcs = funcs;
     if(isSilent){//隐藏启动时，front必须为false
         front=false;

@@ -124,6 +124,12 @@ function pOpenFile(doc, params, isOnlineDoc){
     OnWindowActivate();
     // 把WPS对象置前
     wps.WppApplication().Activate();
+    if(params.isSilent){
+        var showToFrontMessage={
+            ShowToFront:true
+        }
+        wps.OAAssist.WebNotify(JSON.stringify(showToFrontMessage),true)
+    }
     return doc;
 }
 

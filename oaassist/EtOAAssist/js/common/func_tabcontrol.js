@@ -229,7 +229,7 @@ function OnBtnSaveToServer() {
         wps.alert("系统未传入文件上载路径，不能执行上传操作！");
         return;
     }
-
+    alert(111)
     if (!wps.confirm("先保存文档，并开始上传到系统后台，请确认？")) {
         return;
     }
@@ -303,7 +303,7 @@ function OnBtnSaveAsLocalFile() {
         alert("WPS当前没有可操作文档！");
         return;
     }
-
+    var oldName=l_doc.FullName;
     // 设置WPS文档对话框 2 FileDialogType:=msoFileDialogSaveAs
     var l_ksoFileDialog = wps.EtApplication().FileDialog(2);
     l_ksoFileDialog.InitialFileName = l_doc.Name; //文档名称
@@ -311,8 +311,10 @@ function OnBtnSaveAsLocalFile() {
     if (l_ksoFileDialog.Show() == -1) { // -1 代表确认按钮
         wps.PluginStorage.setItem("OADocUserSave", true); //设置保存为临时状态，在Save事件中避免OA禁止另存为对话框
         l_ksoFileDialog.Execute(); //会触发保存文档的监听函数
-
+        
+       // wps.PluginStorage.setItem(wps.EtApplication().ActiveWorkbook.FullName,wps.PluginStorage.getItem(oldName))//重新为另存为的文件设置参数
         pSetNoneOADocFlag(l_doc);
+        
         wps.ribbonUI.Invalidate(); //刷新Ribbon的状态
     };
 }
@@ -343,7 +345,7 @@ function OnAction(control) {
     } else if (typeof control == "number" && arguments.length > 1) { //针对combox的
         eleId = arguments[2].Id;
     }
-    switch (strId) {
+    switch (eleId) {
         case "btnSaveToServer":
             OnBtnSaveToServer();
             break;
