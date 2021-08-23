@@ -124,7 +124,14 @@ function mult(info,front){
 }
 
 function handleOaMessage(data) {
-    console.log(data)
+    if(data&&typeof data=="object"){
+        if(data.ShowToFront){
+            _WpsInvoke([],true);
+            setTimeout(function(){
+                _WpsInvoke([],true);
+            },2000)
+        }
+    }
 }
 function GetUploadPath() {
     var url = document.location.host;

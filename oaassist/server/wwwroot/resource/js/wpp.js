@@ -123,7 +123,14 @@ function mult(info,front){
         front)
 }
 function handleOaMessage(data) {
-    console.log(data)
+    if(data&&typeof data=="object"){
+        if(data.ShowToFront){
+            _WpsInvoke([],true);
+            setTimeout(function(){
+                _WpsInvoke([],true);
+            },2000)
+        }
+    }
 }
 function GetDemoPath(fileName) {
 
