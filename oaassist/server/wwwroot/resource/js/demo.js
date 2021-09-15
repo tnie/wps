@@ -87,6 +87,12 @@ function envTest() {
     }
     xhr.open('get', 'http://127.0.0.1:3888/FileList', true)
     xhr.send();
+    var xhr1 =getHttpObj()
+    xhr1.onload=function(e){
+      
+    }
+    xhr1.open('get', 'http://127.0.0.1:3888/WpsSetupTest?pluginsMode='+pluginsMode, true)
+    xhr1.send()
 }
 // 切换到相应 tab. 0: wps  1: et  2: wpp
 function SwitchTab(crtTabIndex) {

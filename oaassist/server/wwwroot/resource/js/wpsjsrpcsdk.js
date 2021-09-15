@@ -1286,7 +1286,7 @@
             callback: callBack,
             tryCount: 3,
             bPop: true,
-            timeout: 5000,
+            timeout: 0,
             concurrent: true
         });
     }
@@ -1331,7 +1331,8 @@
             "url": element.url,
             "addonType": element.addonType,
             "online": element.online,
-            "version": element.version
+            "version": element.version,
+            "time":new Date().getTime()
         }
         return FormatSendData(data);
     }

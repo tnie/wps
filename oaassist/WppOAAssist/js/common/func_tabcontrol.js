@@ -245,7 +245,7 @@ function OnBtnSaveToServer() {
         //落地文档，调用UploadFile方法上传到OA后台
         try {
             //调用OA助手的上传方法
-            wps.OAAssist.UploadFile(l_UploadName, l_DocPath, l_uploadPath, l_FieldName, "OnUploadToServerSuccess", "OnUploadToServerFail");
+            UploadFile(l_UploadName, l_DocPath, l_uploadPath, l_FieldName, "OnUploadToServerSuccess", "OnUploadToServerFail");
         } catch (err) {
             alert("上传文件失败！请检查系统上传参数及网络环境！");
         }

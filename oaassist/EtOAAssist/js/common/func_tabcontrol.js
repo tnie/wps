@@ -311,7 +311,7 @@ function OnBtnSaveAsLocalFile() {
     if (l_ksoFileDialog.Show() == -1) { // -1 代表确认按钮
         wps.PluginStorage.setItem("OADocUserSave", true); //设置保存为临时状态，在Save事件中避免OA禁止另存为对话框
         l_ksoFileDialog.Execute(); //会触发保存文档的监听函数
-        
+        wps.EtApplication().ActiveWorkbook.SaveAs(l_ksoFileDialog.SelectedItems.Item(1),对应的类型)
        // wps.PluginStorage.setItem(wps.EtApplication().ActiveWorkbook.FullName,wps.PluginStorage.getItem(oldName))//重新为另存为的文件设置参数
         pSetNoneOADocFlag(l_doc);
         

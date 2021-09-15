@@ -152,6 +152,7 @@ function pOpenFile(doc, params, isOnlineDoc) {
     wps.WpsApplication().WindowState=1;
     wps.WpsApplication().Activate();
     if(params.isSilent){
+        wps.Application.WindowState=2;
         var showToFrontMessage={
             ShowToFront:true
         }
@@ -269,15 +270,7 @@ function OnOpenOnLineDocSuccess(resp) {
  *  打开在线不落地文档出现失败时，给予错误提示
  */
 function OnOpenOnLineDocDownFail(res) {
-    var err={}
-    try{
-        res=JSON.parse(res)
-        err.Body=Base64.decode(res.Body)
-        err.Headers=Base64.decode(JSON.stringify(res.Headers))
-        console.log(err)
-    }catch(err){
-
-    }
+  console.log(res)
     alert("打开在线不落地文档失败！请尝试重新打开。");
     return;
 }
@@ -414,6 +407,7 @@ function DoOADocOpenRevision(doc, bOpenRevision, bShowRevision) {
     if (!doc) return;
 
     doc.TrackRevisions = bOpenRevision; //如果标记对指定文档的修改，则该属性值为True
+    wps.PluginStorage.setItem(constStrEnum.RevisionEnableFlag,bOpenRevision)
     var l_v = doc.ActiveWindow.View;
     l_v.ShowRevisionsAndComments = bShowRevision; //如果为True，则 WPS 显示使用“修订”功能对文档所作的修订和批注
     l_v.RevisionsBalloonShowConnectingLines = bShowRevision; //如果为 True，则 WPS 显示从文本到修订和批注气球之间的连接线
@@ -815,6 +809,7 @@ function OpenLocalFile() {
 
     //msoFileDialogFilePicker = 3
     var l_FileDialog = wps.WpsApplication().FileDialog(3);
+    l_FileDialog.Filters.Add("docx文件","*.docx")
     if (l_FileDialog.Show()) {
         l_FileName = l_FileDialog.SelectedItems;
         if (l_FileName.Count > 0) {

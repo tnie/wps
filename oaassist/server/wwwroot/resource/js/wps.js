@@ -117,9 +117,14 @@ function mult(info,front){
         front)
 }
 function handleOaMessage(data) {
-    if(data&&typeof data=="object"){
-        if(data.ShowToFront){
-            alert(111)
+    var data1={};
+    try{
+        data1=JSON.parse(data)
+    }catch(e){
+        data1=data
+    }
+    if(data1&&typeof data1=="object"){
+        if(data1.ShowToFront){
             _WpsInvoke([],true);
             setTimeout(function(){
                 _WpsInvoke([],true);
@@ -168,7 +173,7 @@ function newDoc() {
         "NewDoc": {}
     }],
         true,
-        "http://127.0.0.1:8080/iestart/jsplugins.xml") // NewDoc方法对应于OA助手dispatcher支持的方法名
+        "http://127.0.0.1:3888/jsplugins.xml") // NewDoc方法对应于OA助手dispatcher支持的方法名
 }
 
 _wps['newDoc'] = {

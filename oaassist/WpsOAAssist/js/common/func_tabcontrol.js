@@ -31,7 +31,7 @@ function OnWPSWorkTabLoad(ribbonUI) {
 function OnJSWorkInit() {
     pInitParameters(); //OA助手环境的所有配置控制的初始化过程
     AddDocumentEvent(); //挂接文档事件处理函数
-}
+} 
 
 //初始化全局参数
 function pInitParameters() {
@@ -65,7 +65,6 @@ function AddDocumentEvent() {
     wps.ApiEvent.AddApiEventListener("DocumentBeforePrint", OnDocumentBeforePrint);
     wps.ApiEvent.AddApiEventListener("DocumentOpen", OnDocumentOpen);
     wps.ApiEvent.AddApiEventListener("DocumentNew", OnDocumentNew);
-    // wps.ApiEvent.AddApiEventListener("NewDocument", OnDocumentNew);
     console.log("AddDocumentEvent");
 }
 
@@ -216,7 +215,7 @@ function DoInsertPicToDoc() {
     }
 
     //获取当前文档对象对应的OA参数
-    var l_picPath = GetDocParamsValue(l_doc, constStrEnum.picPath); // 获取OA参数传入的图片路径
+    var l_picPath = GetDocParamsValue(l_doc,"picPath"); // 获取OA参数传入的图片路径
     if (l_picPath == "") {
         // alert("未获取到系统传入的图片URL路径，不能正常插入图片");
         // return;
@@ -265,9 +264,8 @@ function OnInsertPicToDoc(doc, picPath, picWidth, picHeight,callBack) {
     var pagecount = doc.BuiltInDocumentProperties.Item(wps.Enum&&wps.Enum.wdPropertyPages||14); //获取文档页数
     selection.GoTo(wps.Enum&&wps.Enum.wdGoToPage||1, wps.Enum&&wps.Enum.wdGoToPage||1, pagecount.Value); //将光标指向文档最后一页
     DownloadFile(picPath,function(url){
-        selection.ParagraphFormat.LineSpacing = 12 //防止文档设置了固定行距
+        selection.ParagraphFormat.LineSpacingRule=0;//防止文档设置了固定行距
         var picture = selection.InlineShapes.AddPicture(url, true, true); //插入图片
-        wps.FileSystem.Remove(url) //删除本地的图片
         picture.LockAspectRatio = 0; //在调整形状大小时可分别改变其高度和宽度
         picture.Height = picHeight; //设定图片高度
         picture.Width = picWidth; //设定图片宽度
@@ -281,8 +279,10 @@ function OnInsertPicToDoc(doc, picPath, picWidth, picHeight,callBack) {
         seal_shape.RelativeVerticalPosition = wps.Enum&&wps.Enum.wdRelativeVerticalPositionPage||1;
         seal_shape.Left = 315; //设置指定形状或形状范围的垂直位置（以磅为单位）。
         seal_shape.Top = 630; //指定形状或形状范围的水平位置（以磅为单位）。
+        seal_shape.WrapFormat.Type=3
+        seal_shape.ZOrder(4)
         callBack&&callBack()
-    })
+    },"test.png",true)
     
 }
 
@@ -308,7 +308,7 @@ function OnDoChangeToOtherDocFormat(p_FileSuffix, pShowPrompt) {
         pShowPrompt = true; //默认设置为弹出用户确认框
     }
     //默认设置为以当前文件的显示模式输出，即当前为修订则输出带有修订痕迹的
-    pDoChangeToOtherDocFormat(l_doc, l_suffix, pShowPrompt, true);
+    pDoChangeToOtherDocFormat(l_doc, l_suffix, pShowPrompt, false);
 }
 /**
  * 作用：获取文档的Path或者临时文件路径
@@ -364,11 +364,13 @@ function pDoChangeToOtherDocFormat(p_Doc, p_Suffix, pShowPrompt, p_ShowRevision)
         var l_SourceName = p_Doc.Name;
         var l_NewName="";
         var docPath=getDocSavePath(p_Doc);
+        //本地另存之后的完整路径
         if(docPath.indexOf("\\")>0){
             l_NewName = docPath + "\\B_" + p_Doc.Name;
         }else{
             l_NewName = docPath + "/B_" + p_Doc.Name;
         }
+        //原本文件的完整路径
         if(docPath.indexOf("\\")>0){
             l_SourceName = docPath + "\\" + l_SourceName;
         }else{
@@ -433,7 +435,7 @@ function OnBtnSaveAsLocalFile() {
         //alert("确认");
         wps.PluginStorage.setItem(constStrEnum.OADocUserSave, true); //设置保存为临时状态，在Save事件中避免OA禁止另存为对话框
         l_ksoFileDialog.Execute(); //会触发保存文档的监听函数
-
+        
         pSetNoneOADocFlag(l_doc);
 
         wps.ribbonUI.Invalidate(); //刷新Ribbon的状态
@@ -692,6 +694,7 @@ function OnUploadToServerSuccess(resp) {
 }
 
 function OnUploadToServerFail(resp) {
+    console.log(resp)
     alert("文件上传失败！");
 }
 

@@ -18,6 +18,9 @@ let testFuncs=null;
 function dispatcher(info) {
     var funcs = info.funcs;
     wps.WpsApplication().Options.UseLocalUserInfo=true//修订时，不使用登录名
+    if(funcs.length==0){//参数为空数组时，表示置顶，将WPS最大化
+		wps.Application.WindowState=1
+	}
     console.log(funcs)
     //解析参数
     /**

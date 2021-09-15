@@ -7,4 +7,4 @@ document.write("<script language='javascript' src='js/common/common.js?time="+ti
 document.write("<script language='javascript' src='js/common/func_oastarter.js?time="+time+"'></script>");
 document.write("<script language='javascript' src='js/common/func_docProcess.js?time="+time+"'></script>");
 document.write("<script language='javascript' src='js/common/func_tabcontrol.js?time="+time+"'></script>");
-document.write("<script language='javascript' src='js/common/func_docEvents.js'?time="+time+"></script>");
+document.write("<script language='javascript' src='js/common/func_docEvents.js?time="+time+"'></script>");

@@ -309,6 +309,9 @@ function closeWpsIfNoDocument() {
     var docs = wpsApp.Documents;
     if (!docs || docs.Count == 0) {
         wps.ApiEvent.Cancel = true;
+        setTimeout(function(){
+            wpsApp.Quit();
+        },500)
         //根据业务可以选择是否退出进程 wpsApp.Quit();
     }
 }
@@ -444,7 +447,11 @@ function DownloadFile(url, callback, fileName, isDelete) {
             //需要业务系统的服务端在传递文件流时，确保请求中的参数有filename
             fileName = fileName ? fileName : pGetFileName(xhr, url)
             //落地打开模式下，WPS会将文件下载到本地的临时目录，在关闭后会进行清理
-            var path = wps.Env.GetTempPath() + "/" + fileName
+            
+            // wps.Env.GetTempPath()临时目录
+            //wps.Env.GetHomePath()+"/桌面" 桌面
+            var path = wps.Env.GetTempPath() + "/" + fileName;
+            wps.FileSystem.Remove(path)
             var reader = new FileReader();
             reader.onload = function () {
                 wps.FileSystem.writeAsBinaryString(path, reader.result);
@@ -625,7 +632,7 @@ function returnFormatType(newName){
         value:16
     },{
         type:"pdf",
-        value:1
+        value:17
     },{
         type:"uot",
         value:1
@@ -655,21 +662,3 @@ function toO(num,bs=16){
         return "0"+num.toString(bs)
     }
 }
-function _WpsInvoke(funcs, front) {
-    var info = {};
-    info.funcs = funcs;
-    WpsInvoke.InvokeAsHttp("wps",// 组件类型
-        "WpsOAAssist", // 插件名，与wps客户端加载的加载的插件名对应
-        "dispatcher", // 插件方法入口，与wps客户端加载的加载的插件代码对应，详细见插件代码
-        info, // 传递给插件的数据        
-        function (result) { // 调用回调，status为0为成功，其他是错误
-           if(front){
-            _WpsInvoke([]);//二次调用，确保置顶
-
-           }
-        },
-        front,//这个参数是控制着通过页面执行WPS加载项方法，WPS的界面是否在执行时在前台显示
-        jsPluginsXml,
-        isSlient)
-}
-

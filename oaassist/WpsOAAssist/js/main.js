@@ -2,7 +2,6 @@
 var time=new Date().getTime()
 document.write("<script language='javascript' src='otherslib/lib/jquery.min.js?time="+time+"'></script>");
 document.write("<script language='javascript' src='otherslib/lib/formdata.js?time="+time+"'></script>");
-document.write("<script language='javascript' src='otherslib/lib/wpsjsrpcsdk.js?time="+time+"'></script>");
 //======================wps api常用枚举值=====================
 document.write("<script language='javascript' src='js/common/enum.js?time="+time+"'></script>");
 //=======================业务代码============================
