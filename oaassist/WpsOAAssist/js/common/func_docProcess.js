@@ -174,7 +174,7 @@ function pOpenFile(doc, params, isOnlineDoc) {
  *  pic 类型： 把对应的URL的图片文件插入到指定的书签位置
  * @param {*} params 
  */
-function GetServerTemplateData(template, pTemplateDataUrl) {
+ function GetServerTemplateData(template, pTemplateDataUrl) {
     //获取文档内容
     $.ajax({
         url: pTemplateDataUrl,
@@ -221,8 +221,7 @@ function GetServerTemplateData(template, pTemplateDataUrl) {
                 var selection=wps.WpsApplication().ActiveWindow.Selection;
                 if (bookmark.Range.Text) {
                     var scaling=bookmark.Range.Font.Scaling
-                    selection.Start = bookmark.Range.End - (bookEnd - bookStart);
-                    selection.End = bookmark.Range.End;
+                    selection.SetRange(bookmark.Range.End - (bookEnd - bookStart),bookmark.Range.End)
                     selection.Cut();
                     bookmark.Range.Font.Scaling=scaling;
                 } else {
@@ -234,6 +233,7 @@ function GetServerTemplateData(template, pTemplateDataUrl) {
         }
     });
 }
+
 
 /**
  * 打开服务端的文档（不落地）
