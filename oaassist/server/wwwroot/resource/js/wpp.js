@@ -123,8 +123,14 @@ function mult(info,front){
         front)
 }
 function handleOaMessage(data) {
-    if(data&&typeof data=="object"){
-        if(data.ShowToFront){
+    var data1={};
+    try{
+        data1=JSON.parse(data)
+    }catch(e){
+        data1=data
+    }
+    if(data1&&typeof data1=="object"){
+        if(data1.ShowToFront){
             _WpsInvoke([],true);
             setTimeout(function(){
                 _WpsInvoke([],true);
@@ -192,6 +198,38 @@ _wpp['openDoc'] = {
     页面点击按钮，通过wps客户端协议来启动演示组件，调用oaassist插件，执行传输数据中的指令\n\
     funcs参数信息说明:\n\
         OpenDoc方法对应于OA助手dispatcher支持的方法名\n\
+            docId 文档ID，OA助手用以标记文档的信息，以区分其他文档\n\
+            uploadPath 保存文档上传接口\n\
+            fileName 打开的文档路径\n\
+            showButton 要显示的按钮\n\
+"
+}
+function hideOpenDoc() {
+    var filePath = prompt("请输入打开文件路径（本地或是url）：", GetDemoPath("样章.pptx"))
+    var uploadPath = prompt("请输入文档上传接口:", GetUploadPath())
+
+    _WpsInvoke([{
+        "OpenDoc": {
+            "docId": "123", // 文档ID
+            "uploadPath": uploadPath, // 保存文档上传接口
+            "fileName": filePath,
+            showButton: "btnSaveFile;btnSaveAsLocal"
+        }
+    }],false,undefined,true)
+}
+
+_wpp['hideOpenDoc'] = {
+    action: hideOpenDoc,
+    code: _WpsInvoke.toString() + "\n\n" + hideOpenDoc.toString(),
+    detail: "\n\
+  说明：\n\
+    点击按钮，输入要打开的文档路径，输入文档上传接口，如果传的不是有效的服务端地址，将无法使用保存上传功能。\n\
+    打开演示后,将根据文档路径下载并打开对应的文档，保存将自动上传指定服务器地址\n\
+    \n\
+  方法使用：\n\
+    页面点击按钮，通过wps客户端协议来启动演示组件，调用oaassist插件，执行传输数据中的指令\n\
+    funcs参数信息说明:\n\
+        hideOpenDoc方法对应于OA助手dispatcher支持的方法名\n\
             docId 文档ID，OA助手用以标记文档的信息，以区分其他文档\n\
             uploadPath 保存文档上传接口\n\
             fileName 打开的文档路径\n\

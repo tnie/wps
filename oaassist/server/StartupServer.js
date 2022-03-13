@@ -32,6 +32,7 @@ app.use(express.static(path.join(__dirname, "wwwroot"))); //wwwroot代表http服
 app.use('/plugin/et', express.static(path.join(__dirname, "../EtOAAssist")));
 app.use('/plugin/wps', express.static(path.join(__dirname, "../WpsOAAssist")));
 app.use('/plugin/wpp', express.static(path.join(__dirname, "../WppOAAssist")));
+app.use('/plugin/pdf', express.static(path.join(__dirname, "../PdfOAAssist")));
 
 /** 
  * 文件下载

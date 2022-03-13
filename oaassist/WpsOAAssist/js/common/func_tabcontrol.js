@@ -277,8 +277,8 @@ function OnInsertPicToDoc(doc, picPath, picWidth, picHeight,callBack) {
     
         seal_shape.RelativeHorizontalPosition = wps.Enum&&wps.Enum.wdRelativeHorizontalPositionPage||1;
         seal_shape.RelativeVerticalPosition = wps.Enum&&wps.Enum.wdRelativeVerticalPositionPage||1;
-        seal_shape.Left = 315; //设置指定形状或形状范围的垂直位置（以磅为单位）。
-        seal_shape.Top = 630; //指定形状或形状范围的水平位置（以磅为单位）。
+        seal_shape.Left = selection.Information(5); //设置指定形状或形状范围的垂直位置（以磅为单位）。
+        seal_shape.Top = selection.Information(6); //指定形状或形状范围的水平位置（以磅为单位）。
         seal_shape.WrapFormat.Type=3
         seal_shape.ZOrder(4)
         callBack&&callBack()
@@ -434,10 +434,10 @@ function OnBtnSaveAsLocalFile() {
     if (l_ksoFileDialog.Show() == -1) { // -1 代表确认按钮
         //alert("确认");
         wps.PluginStorage.setItem(constStrEnum.OADocUserSave, true); //设置保存为临时状态，在Save事件中避免OA禁止另存为对话框
-        l_ksoFileDialog.Execute(); //会触发保存文档的监听函数
-        
+        //l_ksoFileDialog.Execute(); //会触发保存文档的监听函数
+        wps.Application.ActiveDocument.SaveAs2(l_ksoFileDialog.SelectedItems.Item(1),returnFormatType(l_ksoFileDialog.SelectedItems.Item(1)))
         pSetNoneOADocFlag(l_doc);
-
+        wps.PluginStorage.setItem(constStrEnum.OADocUserSave, false); 
         wps.ribbonUI.Invalidate(); //刷新Ribbon的状态
 
     };

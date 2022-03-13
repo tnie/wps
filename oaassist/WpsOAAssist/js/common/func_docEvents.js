@@ -8,7 +8,7 @@ function OnWindowActivate() {
     var l_doc = wps.WpsApplication().ActiveDocument;
     SetCurrDocEnvProp(l_doc); // 设置当前文档对应的用户名
     showOATab(); // 根据文件是否为OA文件来显示OA菜单再进行刷新按钮
-    setTimeout(activeTab, 2000); // 激活页面必须要页签显示出来，所以做1秒延迟
+    setTimeout(activeTab, 2000); // 激活页面必须要页签显示出来，所以做2秒延迟
     return;
 }
 
@@ -79,17 +79,20 @@ function OnDocumentBeforeClose(doc) {
     }
     // 有未保存的数据，确认无需保存直接关闭
     doc.Close(wps.Enum&&wps.Enum.wdDoNotSaveChanges||0); // 不保存待定的更改。枚举值兼容性写法
+    wps.OAAssist.WebNotify("111",true);
     closeWpsIfNoDocument(); // 判断WPS中的文件个数是否为0，若为0则关闭WPS函数
     var tmpFull=l_fullName.replace(/\\/ig,"/");
     if(tmpFull.indexOf(wps.Env.GetTempPath)>-1){
         wps.FileSystem.Remove(l_fullName);
     }
+    return ;
 }
 
 
 //文档保存后关闭事件
 function OnDocumentAfterClose(doc) {
     console.log("OnDocumentAfterClose");
+    wps.OAAssist.WebNotify("222",true);
     var l_NofityURL = GetDocParamsValue(doc, constStrEnum.notifyUrl);
     if (l_NofityURL) {
         l_NofityURL = l_NofityURL.replace("{?}", "3"); //约定：参数为3则文档关闭
@@ -99,30 +102,17 @@ function OnDocumentAfterClose(doc) {
 
     pRemoveDocParam(doc); // 关闭文档时，移除PluginStorage对象的参数
     pSetWPSAppUserName(); // 判断文档关闭后，如果系统已经没有打开的文档了，则设置回初始用户名
+    return ;
 }
 
 //文档打开事件
 function OnDocumentOpen(doc) {
-    //设置当前新增文档是否来自OA的文档
-    // if (wps.PluginStorage.getItem(constStrEnum.IsInCurrOADocOpen) == false) {
-    //     //如果是用户自己在WPS环境打开文档，则设置非OA文档标识
-    //     console.log(wps.PluginStorage.getItem(wps.WpsApplication().ActiveDocument.DocID))
-    //     pSetNoneOADocFlag(doc);
-    //     console.log(wps.PluginStorage.getItem(wps.WpsApplication().ActiveDocument.DocID))
-    // }
     OnWindowActivate();
     ChangeOATabOnDocOpen(); //打开文档后，默认打开Tab页
-    
-    setTimeout(activeTab,2000); // 激活OA助手菜单
 }
 
 //新建文档事件
 function OnDocumentNew(doc) {
-    //设置当前新增文档是否来自OA的文档
-    // if (wps.PluginStorage.getItem(constStrEnum.IsInCurrOADocOpen) == false) {
-    //     //如果是用户自己在WPS环境打开文档，则设置非OA文档标识
-    //     pSetNoneOADocFlag(doc);
-    // }
     ChangeOATabOnDocOpen(); // 打开OA助手Tab菜单页
     wps.ribbonUI.Invalidate(); // 刷新Ribbon按钮的状态
 }
@@ -227,7 +217,6 @@ function ChangeOATabOnDocOpen() {
     var l_ShowOATab = true; //默认打开
     l_ShowOATab = wps.PluginStorage.getItem(constStrEnum.ShowOATabDocActive);
     if (l_ShowOATab == true) {
-        setTimeout(activeTab,500);
-        // wps.ribbonUI.ActivateTab("WPSWorkExtTab"); //新建文档时，自动切换到OA助手状态
+        setTimeout(activeTab,2000);
     }
 }

@@ -151,16 +151,27 @@ function StringToUint8Array(string) {
     return buffer;
 }
 
-function DownloadFile(url, callback) {
-    // 需要根据业务实现一套
+/**
+ * WPS下载文件到本地打开（业务系统可根据实际情况进行修改）
+ * @param {*} url 文件流的下载路径
+ * @param {*} callback 下载后的回调
+ * @param {*} fileName 自定义文件名称
+ * @param {*} isDelete 操作完成后，是否删除本地文件
+ */
+ function DownloadFile(url, callback, fileName, isDelete) {
+    url=url.indexOf("?")>-1?url+"&newTime="+new Date().getTime():url+"?newTime="+new Date().getTime()//给文件下载地址添加时间戳
     var xhr = new XMLHttpRequest();
     xhr.onreadystatechange = function () {
         if (this.readyState == 4 && this.status == 200) {
-            var path = wps.Env.GetTempPath() + "/" + pGetFileName(xhr, url);
+            //需要业务系统的服务端在传递文件流时，确保请求中的参数有filename
+            fileName = fileName ? fileName : pGetFileName(xhr, url)
+            //落地打开模式下，WPS会将文件下载到本地的临时目录，在关闭后会进行清理
+            var path = wps.Env.GetTempPath() + "/" + fileName;
             var reader = new FileReader();
             reader.onload = function () {
                 wps.FileSystem.writeAsBinaryString(path, reader.result);
                 callback(path);
+                isDelete && wps.FileSystem.Remove(path)
             };
             reader.readAsBinaryString(xhr.response);
         }
@@ -169,6 +180,7 @@ function DownloadFile(url, callback) {
     xhr.responseType = 'blob';
     xhr.send();
 }
+
 
 /**
  * WPS上传文件到服务端（业务系统可根据实际情况进行修改，为了兼容中文，服务端约定用UTF-8编码格式）

@@ -117,6 +117,10 @@ function pShowRibbonGroupByOADocParam(CtrlID) {
     }
     // 添加OA菜单判断
     if (CtrlID == "WPSWorkExtTab") {
+        if(wps.Application.ActiveWorkbook){
+            let l_value=GetDocParamsValue(wps.Application.ActiveWorkbook,"isOA");
+            return l_value?true:false;
+        }
         var l_value = wps.PluginStorage.getItem("ShowOATabDocActive");
         wps.PluginStorage.setItem("ShowOATabDocActive", false); //初始化临时状态变量
         console.log("菜单：" + l_value);
@@ -311,9 +315,9 @@ function OnBtnSaveAsLocalFile() {
     if (l_ksoFileDialog.Show() == -1) { // -1 代表确认按钮
         wps.PluginStorage.setItem("OADocUserSave", true); //设置保存为临时状态，在Save事件中避免OA禁止另存为对话框
         l_ksoFileDialog.Execute(); //会触发保存文档的监听函数
-        wps.EtApplication().ActiveWorkbook.SaveAs(l_ksoFileDialog.SelectedItems.Item(1),对应的类型)
-       // wps.PluginStorage.setItem(wps.EtApplication().ActiveWorkbook.FullName,wps.PluginStorage.getItem(oldName))//重新为另存为的文件设置参数
-        pSetNoneOADocFlag(l_doc);
+        //wps.EtApplication().ActiveWorkbook.SaveAs(l_ksoFileDialog.SelectedItems.Item(1),对应的类型)
+       wps.PluginStorage.setItem(wps.EtApplication().ActiveWorkbook.FullName,wps.PluginStorage.getItem(oldName))//重新为另存为的文件设置参数
+       // pSetNoneOADocFlag(l_doc);
         
         wps.ribbonUI.Invalidate(); //刷新Ribbon的状态
     };
@@ -352,6 +356,30 @@ function OnAction(control) {
         case "btnSaveAsFile":
             OnBtnSaveAsLocalFile();
             break;
+        case "FileSaveAsMenu": //通过idMso进行「另存为」功能的自定义
+        case "FileSaveAs":
+            {
+                if (pCheckIfOADoc()) { //文档来源是业务系统的，做自定义
+                    alert("这是OA文档，将Ctrl+S动作做了重定义，可以调用OA的保存文件流到业务系统的接口。")
+                    OnBtnSaveToServer();
+                } else { //本地的文档，期望不做自定义，通过转调idMso的方法实现
+                    wps.WpsApplication().CommandBars.ExecuteMso("FileSaveAsExcelXlsx");
+                    //此处一定不能去调用与重写idMso相同的ID，否则就是个无线递归了，即在这个场景下不可调用FileSaveAs和FileSaveAsMenu这两个方法
+                }
+                break;
+            }
+        case "FileSave": //通过idMso进行「保存」功能的自定义
+            {
+                if (pCheckIfOADoc()) { //文档来源是业务系统的，做自定义
+                    alert("这是OA文档，将Ctrl+S动作做了重定义，可以调用OA的保存文件流到业务系统的接口。")
+                    OnBtnSaveToServer();
+                } else { //本地的文档，期望不做自定义，通过转调idMso的方法实现
+                    // wps.WpsApplication().CommandBars.ExecuteMso("FileSave");
+                    wps.Application.ActiveWorkbook.Save()
+                    //此处一定不能去调用与重写idMso相同的ID，否则就是个无线递归了，即在这个场景下不可调用FileSaveAs和FileSaveAsMenu这两个方法
+                }
+                break;
+            }
         default:
             ;
     }
@@ -375,6 +403,9 @@ function OnGetEnabled(control) {
         case "btnSaveAsFile":
             let doc=wps.EtApplication().ActiveWorkbook;
             let l_Params=wps.PluginStorage.getItem(doc.FullName);
+            if(!l_Params){
+                return true;
+            }
             let OADocLandMode=JSON.parse(l_Params).OADocLandMode
             return !OADocLandMode
         default:

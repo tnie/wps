@@ -30,6 +30,7 @@ function NewFile(params) {
     //Office文件打开后，设置该文件属性：从服务端来的OA文件
     pSetOADocumentFlag(doc, params);
     //设置当前文档为 本地磁盘落地模式
+    set
     DoSetOADocLandMode(doc, EnumDocLandMode.DLM_LocalDoc);
     //强制执行一次Activate事件
     OnWindowActivate();
@@ -241,7 +242,8 @@ function SetOADocProtect(doc, ProtectPassword) {
 /**
  *  打开在线不落地文档出现失败时，给予错误提示
  */
-function OnOpenOnLineDocDownFail() {
+function OnOpenOnLineDocDownFail(err) {
+    console.log(err)
     alert("打开在线不落地文档失败！请尝试重新打开。");
     return;
 }

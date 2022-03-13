@@ -6,6 +6,7 @@
 	<jspluginonline name="EtOAAssist" type="et" url="http://127.0.0.1:3888/plugin/et"/>
 	<jspluginonline name="WpsOAAssist" type="wps" url="http://127.0.0.1:3888/plugin/wps"/>
 	<jspluginonline name="WppOAAssist" type="wpp" url="http://127.0.0.1:3888/plugin/wpp"/>
+	<jspluginonline name="PdfOAAssist" type="pdf" url="http://127.0.0.1:3888/plugin/pdf"/>
 </jsplugins>
 <!-- WPS加载项：在线模式配置	End -->
 <!-- WPS加载项：离线模式配置	Start -->

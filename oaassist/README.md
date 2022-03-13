@@ -39,6 +39,7 @@
 4. npm config set registry http://registry.npm.taobao.org //切换npm淘宝镜像源
 5. npm install //安装相应依赖
 6. node StartupServer //启动demo的服务
+7. [wpsjsrpcsdk.js文件接口说明](https://www.npmjs.com/package/wpsjs-rpc-sdk)
 
 
 ### WPS重要地址

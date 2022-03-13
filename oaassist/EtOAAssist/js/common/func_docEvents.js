@@ -85,12 +85,17 @@ function OnWorkbookBeforeClose(doc) {
             if (wps.confirm("系统文件有改动，是否提交后关闭？" + "\n" + "确认后请按上传按钮执行上传操作。取消则继续关闭文档。")) {
                 wps.ApiEvent.Cancel = true;
                 return;
+            }else{
+                doc.Saved=true;
             }
         }
     }
     doc.Close(false); //保存待定的更改。
     closeEtIfNoDocument(); // 判断文件个数是否为0，若为0则关闭组件
-    wps.FileSystem.Remove(l_fullName);
+    var tmpFull=l_fullName.replace(/\\/ig,"/");
+    if(tmpFull.indexOf(wps.Env.GetTempPath)>-1){
+        wps.FileSystem.Remove(l_fullName);
+    }
 }
 
 

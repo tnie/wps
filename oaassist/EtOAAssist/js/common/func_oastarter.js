@@ -11,10 +11,6 @@
  */
 function dispatcher(info) {
     var funcs = info.funcs;
-    //NotifyToWeb();
-    //alert(JSON.stringify(funcs));
-    //执行web页面传递的方法
-    //wps.Application.SendKeys("{enter}")
     setTimeout(() => {
         for (var index = 0; index < funcs.length; index++) {
             var func = funcs[index];

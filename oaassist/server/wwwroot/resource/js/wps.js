@@ -84,10 +84,10 @@ function multInvoke(info,front,jsPluginsXml,isSilent){
 //多进程二次封装
 function mult(info,front){
     wpsClient.InvokeAsHttp(
-        pluginName, // 插件名，与wps客户端加载的加载的插件名对应
-        "dispatcher", // 插件方法入口，与wps客户端加载的加载的插件代码对应，详细见插件代码
-        info, // 传递给插件的数据        
-        function (result) { // 调用回调，status为0为成功，其他是错误
+        pluginName,// 插件名，与wps客户端加载的加载的插件名对应
+        "dispatcher",// 插件方法入口，与wps客户端加载的加载的插件代码对应，详细见插件代码
+        info,// 传递给插件的数据        
+        function (result) {// 调用回调，status为0为成功，其他是错误
             if (wpsClient.clientId) {
                 localStorage.setItem(clientStr, wpsClient.clientId)
             }
@@ -116,6 +116,7 @@ function mult(info,front){
         },
         front)
 }
+var count=0;
 function handleOaMessage(data) {
     var data1={};
     try{

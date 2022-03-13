@@ -15,6 +15,29 @@
     var bFinished = true;
 
     /**
+     * 兼容IE低版本Array没有indexOf方法的场景
+     */
+    if (!Array.prototype.indexOf) {
+        Array.prototype.indexOf = function (elt /*, from*/) {
+            var len = this.length >>> 0;
+
+            var from = Number(arguments[1]) || 0;
+            from = (from < 0)
+                ? Math.ceil(from)
+                : Math.floor(from);
+            if (from < 0)
+                from += len;
+
+            for (; from < len; from++) {
+                if (from in this &&
+                    this[from] === elt)
+                    return from;
+            }
+            return -1;
+        };
+    }
+
+    /**
      * 兼容IE低版本的创建httpobj对象的方法
      * @returns httpobj，可用于进行数据传输的http的对象
      */
@@ -74,31 +97,31 @@
      * @param {*} url           网页路径，传输地址
      * @param {*} type          传输类型，POST / GET / PUT
      * @param {*} sendData      传输的数据
-     * @param {*} callback      回调函数
+     * @param {*} callBack      回调函数
      * @param {*} tryCount      请求失败后的尝试次数
      * @param {*} bPop          是否弹出浏览器提示对话框
      * @param {*} timeout       请求等待响应的时间，超过时间请求实效
      * @param {*} concurrent    请求是否同步发送
-     * @param {*} client        wpsclient对象
+     * @param {*} wpsclient        wpsclient对象
      * @returns NULL
      */
     function startWps(options) {
         if (!bFinished && !options.concurrent) {
-            if (options.callback)
-                options.callback({
+            if (options.callBack)
+                options.callBack({
                     status: 1,
                     message: "上一次请求没有完成"
                 });
             return;
         }
-        if(!options.concurrent)
+        if (!options.concurrent)
             bFinished = false;
         else
             options.bFinished = false;
 
         function startWpsInnder(tryCount) {
             if (tryCount <= 0) {
-                if(!options.concurrent) {
+                if (!options.concurrent) {
                     if (bFinished)
                         return;
                     bFinished = true;
@@ -108,8 +131,8 @@
                     }
                     options.bFinished = true;
                 }
-                if (options.callback)
-                    options.callback({
+                if (options.callBack)
+                    options.callBack({
                         status: 2,
                         message: "请允许浏览器打开WPS Office"
                     });
@@ -122,20 +145,26 @@
             xmlReq.onload = function (res) {
                 var responseStr = IEVersion() < 10 ? xmlReq.responseText : res.target.response;
                 var respStatus = IEVersion() < 10 ? xmlReq.status : res.target.status;
-                if(!options.concurrent)
+                if (!options.concurrent)
                     bFinished = true;
                 else
                     options.bFinished = true;
-                if (options.callback) {
-                    if (respStatus != 200 || errorMsg.indexOf(responseStr) != -1) {
+                if (options.callBack) {
+                    if ((respStatus != undefined && respStatus != 200) || errorMsg.indexOf(responseStr) != -1) {
                         var errorMessage = JSON.parse(responseStr)
-                        options.callback({
+                        options.callBack({
                             status: 1,
                             message: errorMessage.data
                         });
+                        if (errorMessage.data == "Subserver not available." && tryCount == options.tryCount && options.bPop) {
+                            InitWpsCloudSvr();
+                            setTimeout(function () {
+                                startWpsInnder(tryCount - 1)
+                            }, 3000);
+                        }
                     }
                     else {
-                        options.callback({
+                        options.callBack({
                             status: 0,
                             response: responseStr
                         });
@@ -228,6 +257,66 @@
         return output;
     }
 
+    if (typeof window.atob !== 'function') window.atob = func_atob;
+
+    function func_atob(input) {
+        var output = input.replace(/[\s\S]{1,4}/g, cb_decode);
+        return output
+    }
+
+    function cb_decode(cccc) {
+        var len = cccc.length
+            , padlen = len % 4
+            , n = (len > 0 ?
+                b64tab[cccc.charAt(0)] << 18 : 0) |
+                (len > 1 ? b64tab[cccc.charAt(1)] << 12 : 0)
+                | (len > 2 ? b64tab[cccc.charAt(2)] << 6 : 0)
+                | (len > 3 ? b64tab[cccc.charAt(3)] : 0)
+            , chars = [
+                fromCharCode(n >>> 16),
+                fromCharCode((n >>> 8) & 0xff),
+                fromCharCode(n & 0xff)
+            ]
+            ;
+        chars.length -= [0, 0, 2, 1][padlen];
+        return chars.join('');
+    };
+
+    function btou(b) {
+        return b.replace(re_btou, cb_btou);
+    };
+
+    // decoder stuff
+    var re_btou = new RegExp([
+        '[\xC0-\xDF][\x80-\xBF]',
+        '[\xE0-\xEF][\x80-\xBF]{2}',
+        '[\xF0-\xF7][\x80-\xBF]{3}'
+    ].join('|'), 'g');
+
+    function cb_btou(cccc) {
+        switch (cccc.length) {
+            case 4:
+                var cp = ((0x07 & cccc.charCodeAt(0)) << 18)
+                    | ((0x3f & cccc.charCodeAt(1)) << 12)
+                    | ((0x3f & cccc.charCodeAt(2)) << 6)
+                    | (0x3f & cccc.charCodeAt(3)),
+                    offset = cp - 0x10000;
+                return (fromCharCode((offset >>> 10) + 0xD800)
+                    + fromCharCode((offset & 0x3FF) + 0xDC00));
+            case 3:
+                return fromCharCode(
+                    ((0x0f & cccc.charCodeAt(0)) << 12)
+                    | ((0x3f & cccc.charCodeAt(1)) << 6)
+                    | (0x3f & cccc.charCodeAt(2))
+                );
+            default:
+                return fromCharCode(
+                    ((0x1f & cccc.charCodeAt(0)) << 6)
+                    | (0x3f & cccc.charCodeAt(1))
+                );
+        }
+    };
+
     /**
      * 将字符串进行Base64编码
      * @param {*} u         需要编码的数据
@@ -242,6 +331,9 @@
             }).replace(/=/g, '');
     };
 
+    var decode = function (u) {
+        return btou(atob(String(u)));
+    }
     /**
      * 获取IE浏览器版本
      * @returns     IE浏览器版本
@@ -283,7 +375,7 @@
      * @param {*} func          客户端加载项要执行的方法
      * @param {*} param         客户端家乡执行方法的参数
      * @param {*} urlBase       网页路径前缀
-     * @param {*} callback      回调函数
+     * @param {*} callBack      回调函数
      * @param {*} tryCount      请求失败后的尝试次数
      * @param {*} bPop          是否弹出浏览器提示对话框
      * @param {*} wpsclient     wpsclient对象
@@ -310,12 +402,12 @@
         startWps({
             url: url,
             sendData: data,
-            callback: options.callback,
+            callBack: options.callBack,
             tryCount: options.tryCount,
             bPop: options.bPop,
             timeout: 5000,
             concurrent: false,
-            client: options.wpsclient
+            wpsclient: options.wpsclient
         });
     }
 
@@ -327,7 +419,7 @@
      * @param {*} func          客户端加载项要执行的方法
      * @param {*} param         客户端家乡执行方法的参数
      * @param {*} urlBase       网页路径前缀
-     * @param {*} callback      回调函数
+     * @param {*} callBack      回调函数
      * @param {*} wpsclient     wpsclient对象
      * @param {*} concurrent    请求是否同步发送
      */
@@ -338,7 +430,7 @@
             func: options.func,
             param: options.param,
             urlBase: options.urlBase,
-            callback: options.callback,
+            callBack: options.callBack,
             tryCount: 4,
             bPop: true,
             wpsclient: options.wpsclient,
@@ -352,7 +444,7 @@
      * @param {*} name			WPS加载项名称
      * @param {*} func			WPS加载项入口方法
      * @param {*} param			参数：包括WPS加载项内部定义的方法，参数等
-     * @param {*} callback		回调函数
+     * @param {*} callBack		回调函数
      * @param {*} tryCount		重试次数
      * @param {*} bPop			是否弹出浏览器提示对话框
      */
@@ -397,6 +489,8 @@
                 data: data,
                 serverId: serverId,
                 mode: options.silentMode ? true : false,
+                timeout: options.timeout,
+                startparam: options.startparam,
             };
         }
         else {
@@ -406,19 +500,21 @@
                 app: options.clientType,
                 data: baseData,
                 mode: options.wpsclient.silentMode ? "true" : "false",
-                serverId: serverId
+                serverId: serverId,
+                timeout: options.timeout,
+                startparam: options.startparam,
             };
         }
         wrapper = JSON.stringify(wrapper);
         startWps({
             url: url,
             sendData: wrapper,
-            callback: options.callback,
+            callBack: options.callBack,
             tryCount: options.tryCount,
             bPop: options.bPop,
             timeout: 0,
             concurrent: options.concurrent,
-            client: options.wpsclient
+            wpsclient: options.wpsclient
         });
     }
 
@@ -431,7 +527,7 @@
      * @param {*} func          客户端加载项要执行的方法
      * @param {*} param         客户端家乡执行方法的参数
      * @param {*} urlBase       网页路径前缀
-     * @param {*} callback      回调函数
+     * @param {*} callBack      回调函数
      * @param {*} wpsclient     wpsclient对象
      * @param {*} concurrent    请求是否同步发送   
      */
@@ -443,21 +539,33 @@
             startWps({
                 url: options.urlBase + '/version',
                 sendData: JSON.stringify({ serverId: serverId }),
-                callback: function (res) {
+                callBack: function (res) {
                     if (res.status !== 0) {
-                        options.callback(res)
+                        options.callBack(res)
                         return;
                     }
                     serverVersion = res.response;
-                    options.tryCount = 1
-                    options.bPop = false
-                    if (serverVersion === "") {
-                        WpsStart(options)
-                    } else if (serverVersion < "1.0.1" && options.wpsclient) {
-                        options.wpsclient.single = true;
-                        WpsStartWrapExInner(options);
-                    } else {
-                        WpsStartWrapExInner(options);
+                    if (options.isPublish != true) {
+                        options.tryCount = 1
+                        options.bPop = false
+                        if (serverVersion === "") {
+                            WpsStart(options)
+                        } else if (serverVersion < "1.0.1" && options.wpsclient) {
+                            options.wpsclient.single = true;
+                            WpsStartWrapExInner(options);
+                        } else {
+                            WpsStartWrapExInner(options);
+                        }
+                    }
+                    else {
+                        if (serverVersion === "") {
+                            callBack({
+                                status: 4,
+                                message: "当前客户端不支持，请升级客户端"
+                            })
+                        } else {
+                            WpsAddonGetAllConfigInner(options.callBack)
+                        }
                     }
                 },
                 tryCount: 4,
@@ -466,15 +574,27 @@
                 concurrent: options.concurrent
             });
         } else {
-            options.tryCount = 4
-            options.bPop = true
-            if (serverVersion === "") {
-                WpsStartWrap(options)
-            } else if (serverVersion < "1.0.1" && options.wpsclient) {
-                options.wpsclient.single = true;
-                WpsStartWrapExInner(options);
-            } else {
-                WpsStartWrapExInner(options);
+            if (options.isPublish != true) {
+                options.tryCount = 4
+                options.bPop = true
+                if (serverVersion === "") {
+                    WpsStartWrap(options)
+                } else if (serverVersion < "1.0.1" && options.wpsclient) {
+                    options.wpsclient.single = true;
+                    WpsStartWrapExInner(options);
+                } else {
+                    WpsStartWrapExInner(options);
+                }
+            }
+            else {
+                if (serverVersion === "") {
+                    callBack({
+                        status: 4,
+                        message: "当前客户端不支持，请升级客户端"
+                    })
+                } else {
+                    WpsAddonGetAllConfigInner(options.callBack)
+                }
             }
         }
     }
@@ -646,7 +766,7 @@
         return objectURL;
     }
 
-    var RegWebNotifyMap = { wps: {}, wpp: {}, et: {} }
+    var RegWebNotifyMap = { wps: {}, wpp: {}, et: {}, pdf: {} }
     var bWebNotifyUseTimeout = true
     function WebNotifyUseTimeout(value) {
         bWebNotifyUseTimeout = value ? true : false
@@ -665,11 +785,11 @@
      * 注册一个前端页面接收WPS传来消息的方法
      * @param {*} clientType wps | et | wpp
      * @param {*} name WPS加载项的名称
-     * @param {*} callback 回调函数
+     * @param {*} callBack 回调函数
      * @param {*} wpsclient wpsclient对象
      */
-    function RegWebNotify(clientType, name, callback, wpsclient) {
-        if (clientType != "wps" && clientType != "wpp" && clientType != "et")
+    function RegWebNotify(clientType, name, callBack, wpsclient) {
+        if (clientType != "wps" && clientType != "wpp" && clientType != "et" && clientType != "pdf")
             return;
         var paramStr = {}
         if (wpsclient) {
@@ -687,10 +807,10 @@
                 paramStr.businessId = g_businessId
         }
         else {
-            if (typeof callback != 'function')
+            if (typeof callBack != 'function')
                 return
             if (RegWebNotifyMap[clientType][name]) {
-                RegWebNotifyMap[clientType][name] = callback;
+                RegWebNotifyMap[clientType][name] = callBack;
                 return
             }
             var RegWebNotifyID = new Date().valueOf() + ''
@@ -702,68 +822,86 @@
             }
             if (HeartBeatWorker)
                 paramStr.businessId = g_businessId
-            RegWebNotifyMap[clientType][name] = callback
+            RegWebNotifyMap[clientType][name] = callBack
         }
 
         var askItem = function () {
             var xhr = getHttpObj()
             xhr.onload = function (e) {
-                if (xhr.responseText == "WPSInnerMessage_quit" || xhr.status != 200) {
-                    if(!wpsclient){
-                        window.setTimeout(askItem, 2000)
+                if (xhr.responseText == "WPSInnerMessage_quit" || (xhr.status != undefined && xhr.status != 200)) {
+                    if (!wpsclient || wpsclient.single) {
+                        window.setTimeout(askItem, 2000);
                     }
                     return;
                 }
                 window.setTimeout(askItem, 300)
-                try {
-                    if (!HeartBeatWorker)
-                        throw new Error();
-                    var resText = JSON.parse(xhr.responseText);
-                    if (typeof resText == 'object') {
+                if (serverVersion < "1.0.3") {
+                    try {
+                        if (!HeartBeatWorker)
+                            throw new Error();
+                        var resText = JSON.parse(xhr.responseText);
                         paramStr.messageId = resText.msgId;
+                        if (wpsclient) {
+                            if (resText.data != undefined && paramStr.messageId != undefined)  // 如果发的数据是字符串化后的json对象，这里的resText.data就是一个json对象，可以输出自己想要的json数据
+                                if (typeof resText.data == 'object')
+                                    wpsclient.OnRegWebNotify(JSON.stringify(resText.data))
+                                else
+                                    wpsclient.OnRegWebNotify(resText.data)
+                            else
+                                wpsclient.OnRegWebNotify(xhr.responseText)
+                        } else {
+                            var func = RegWebNotifyMap[clientType][name]
+                            if (resText.data != undefined && paramStr.messageId != undefined)  // 如果发的数据是字符串化后的json对象，这里的resText.data就是一个json对象，可以输出自己想要的json数据
+                                if (typeof resText.data == 'object')
+                                    func(JSON.stringify(resText.data))
+                                else
+                                    func(resText.data)
+                            else
+                                func(xhr.responseText)
+                        }
                     }
-                    if (wpsclient) {
-                        if (resText.data && paramStr.messageId != undefined)  // 如果发的数据是字符串化后的json对象，这里的resText.data就是一个json对象，可以输出自己想要的json数据
-                            wpsclient.OnRegWebNotify(resText.data)
-                        else
-                            wpsclient.OnRegWebNotify(xhr.responseText)
-                    } else {
-                        var func = RegWebNotifyMap[clientType][name]
-                        if (resText.data && paramStr.messageId != undefined)  // 如果发的数据是字符串化后的json对象，这里的resText.data就是一个json对象，可以输出自己想要的json数据
-                            func(resText.data)
-                        else
-                            func(xhr.responseText)
+                    catch (e) {
+                        // 这里做一个容错，即使json解析失败，也要把msgId提取出来，发回给服务端，避免消息清不掉一直重复发送
+                        // 同时把data也取出来，但是格式无法保证
+                        var data
+                        var str = xhr.responseText
+                        var idx1 = str.indexOf("\"msgId\"")
+                        var idx2
+                        var idx3
+                        var idx4
+                        var data
+                        if (idx1 != -1) {
+                            idx1 = idx1 + 8
+                            idx2 = str.indexOf("\"data\"") - 2
+                            paramStr.messageId = parseInt(str.substring(idx1, idx2))
+                            idx3 = str.indexOf("\"data\"") + 8
+                            idx4 = str.length - 2
+                            data = str.substring(idx3, idx4)
+                        }
+                        if (wpsclient) {
+                            if (paramStr.messageId !== undefined && data != undefined)
+                                wpsclient.OnRegWebNotify(data)
+                            else
+                                wpsclient.OnRegWebNotify(xhr.responseText)
+                        } else {
+                            var func = RegWebNotifyMap[clientType][name]
+                            if (paramStr.messageId !== undefined && data != undefined)
+                                func(data)
+                            else
+                                func(xhr.responseText)
+                        }
                     }
                 }
-                catch (e) {
-                    // 这里做一个容错，即使json解析失败，也要把msgId提取出来，发回给服务端，避免消息清不掉一直重复发送
-                    // 同时把data也取出来，但是格式无法保证
-                    var data
-                    var str = xhr.responseText
-                    var idx1 = str.indexOf("\"msgId\"")
-                    var idx2
-                    var idx3
-                    var idx4
-                    var data
-                    if(idx1 != -1) {
-                        idx1 = idx1 + 8
-                        idx2 = str.indexOf("\"data\"") - 2
-                        paramStr.messageId = parseInt(str.substring(idx1, idx2))
-                        idx3 = str.indexOf("\"data\"") + 8
-                        idx4 = str.length - 2
-                        data = str.substring(idx3, idx4)
-                    }
+                else {
+                    var resText = JSON.parse(xhr.responseText);
+                    paramStr.messageId = resText.msgId;
+                    var resData = decode(resText.data);
                     if (wpsclient) {
-                        if (paramStr.messageId !== undefined && data)
-                            wpsclient.OnRegWebNotify(data)
-                        else
-                            wpsclient.OnRegWebNotify(xhr.responseText)
-                    } else {
+                        wpsclient.OnRegWebNotify(resData)
+                    }
+                    else {
                         var func = RegWebNotifyMap[clientType][name]
-                        if (paramStr.messageId !== undefined && data)
-                            func(data)
-                        else
-                            func(xhr.responseText)
+                        func(resData)
                     }
                 }
             }
@@ -829,12 +967,14 @@
      * @param {*} name          加载项名称
      * @param {*} func          客户端加载项要执行的方法
      * @param {*} param         客户端加载项执行方法的参数
-     * @param {*} callback      回调函数
+     * @param {*} callBack      回调函数
      * @param {*} showToFront   设置客户端是否显示到前面
      * @param {*} jsPluginsXml  设置加载项路径
      * @param {*} silentMode    是否是静默启动
+     * @param {*} timeout       等待wps客户端启动的超时时间，单位为ms
+     * @param {*} startparam    传递给wps客户端的启动参数
      */
-    function WpsStartWrapVersion(clientType, name, func, param, callback, showToFront, jsPluginsXml, silentMode) {
+    function WpsStartWrapVersion(clientType, name, func, param, callBack, showToFront, jsPluginsXml, silentMode, timeout, startparam) {
         var paramEx = {
             jsPluginsXml: jsPluginsXml ? jsPluginsXml : "",
             showToFront: typeof (showToFront) == 'boolean' ? showToFront : true,
@@ -846,10 +986,12 @@
             func: func,
             param: paramEx,
             urlBase: GetUrlBase(),
-            callback: callback,
+            callBack: callBack,
             wpsclient: undefined,
             concurrent: true,
-            silentMode: silentMode
+            silentMode: silentMode,
+            timeout: timeout,
+            startparam: startparam,
         }
         WpsStartWrapVersionInner(options);
     }
@@ -862,13 +1004,14 @@
         ClientType: {
             wps: "wps",
             et: "et",
-            wpp: "wpp"
+            wpp: "wpp",
+            pdf: "pdf"
         },
         CreateXHR: getHttpObj,
-        IsClientRunning: IsClientRunning
+        IsClientRunning: IsClientRunning,
+        GetVersion:GetVersion
     }
 
-    window.wpsclients = [];
     /**
      * @constructor WpsClient           wps客户端
      * @param {string} clientType       必传参数，加载项类型，有效值为"wps","wpp","et"；分别表示文字，演示，电子表格
@@ -912,34 +1055,67 @@
          * @param {string} name              加载项名称
          * @param {string} func              要调用的加载项中的函数行
          * @param {string} param             在加载项中执行函数func要传递的数据
-         * @param {function({int, string})} callback        回调函数，status = 0 表示成功，失败请查看message信息
+         * @param {function({int, string})} callBack        回调函数，status = 0 表示成功，失败请查看message信息
          * @param {bool} showToFront         设置wps是否显示到前面来
+         * @param {*} timeout       等待wps客户端启动的超时时间，单位为ms
+         * @param {*} startparam    传递给wps客户端的启动参数
          * @return {string}                  "Failed to send message to WPS." 发送消息失败，客户端已关闭；
          *                                   "WPS Addon is not response." 加载项阻塞，函数执行失败
          */
-        this.InvokeAsHttp = function (name, func, param, callback, showToFront) {
+        this.InvokeAsHttp = function (name, func, param, callBack, showToFront, timeout, startparam) {
             function clientCallback(res) {
                 //this不是WpsClient，是options对象
-                if (res.status !== 0 || serverVersion < "1.0.1" || this.client.single == true) {
-                    if (callback)
-                        callback(res);
-                    if (serverVersion < "1.0.1" || this.client.single == true)
-                        RegWebNotify(clientType, name, this.client.onMessage)
+                if (res.status !== 0 || serverVersion < "1.0.1" || this.wpsclient.single == true) {
+                    if (callBack)
+                        callBack(res);
+                    if (serverVersion < "1.0.1" || this.wpsclient.single == true)
+                        RegWebNotify(clientType, name, this.wpsclient.onMessage)
                     return;
                 }
-                var resObject = JSON.parse(res.response);
-                if (this.client.clientId == "") {
-                    this.client.clientId = resObject.clientId;
+                if (serverVersion < "1.0.3") {
+                    try {
+                        var resObject = JSON.parse(res.response);
+                        if (this.wpsclient.clientId == "") {
+                            this.wpsclient.clientId = resObject.clientId;
+                        }
+                        if (typeof resObject.data == "object")
+                            res.response = JSON.stringify(resObject.data);
+                        else
+                            res.response = resObject.data;
+                    }
+                    catch (e) {
+                        var str = res.response
+                        var idx1 = str.indexOf("\"clientId\":\"{")
+                        var idx2
+                        var idx3
+                        var idx4
+                        if (idx1 != -1) {
+                            idx1 = idx1 + ("\"clientId\":\"{").length - 1
+                            idx2 = str.indexOf("\"data\":") - 3
+                            if (this.wpsclient.clientId == "") {
+                                this.wpsclient.clientId = str.substring(idx1, idx2);
+                            }
+                            idx3 = str.indexOf("\"data\":") + ("\"data\":").length
+                            idx4 = str.length - 1
+                            if (idx3 < idx4)
+                                res.response = str.substring(idx3, idx4)
+                            else
+                                res.response = "";
+                        }
+                    }
                 }
-                if (typeof resObject.data == "object")
-                    res.response = JSON.stringify(resObject.data);
-                else
-                    res.response = resObject.data;
+                else {
+                    var resObject = JSON.parse(res.response);
+                    if (this.wpsclient.clientId == "") {
+                        this.wpsclient.clientId = resObject.clientId;
+                    }
+                    res.response = decode(resObject.data);
+                }
                 if (IEVersion() < 10)
                     eval(" res.response = '" + res.response + "';");
-                if (callback)
-                    callback(res);
-                this.client.RegWebNotify(name);
+                if (callBack)
+                    callBack(res);
+                this.wpsclient.RegWebNotify(name);
             }
             var paramEx = {
                 jsPluginsXml: this.jsPluginsXml ? this.jsPluginsXml : "",
@@ -951,7 +1127,9 @@
                 func: func,
                 param: paramEx,
                 urlBase: GetUrlBase(),
-                callback: clientCallback
+                callBack: clientCallback,
+                timeout: timeout,
+                startparam: startparam,
             })
         }
 
@@ -960,10 +1138,12 @@
          * @param {string} name              加载项名称
          * @param {string} func              要调用的加载项中的函数行
          * @param {string} param             在加载项中执行函数func要传递的数据
-         * @param {function({int, string})} callback        回调函数，status = 0 表示成功，失败请查看message信息
+         * @param {function({int, string})} callBack        回调函数，status = 0 表示成功，失败请查看message信息
+         * @param {*} timeout       等待wps客户端启动的超时时间，单位为ms
+         * @param {*} startparam    传递给wps客户端的启动参数
          * @param {bool} showToFront         设置wps是否显示到前面来
          */
-        this.InvokeAsHttps = function (name, func, param, callback, showToFront) {
+        this.InvokeAsHttps = function (name, func, param, callBack, showToFront, timeout, startparam) {
             var paramEx = {
                 jsPluginsXml: this.jsPluginsXml ? this.jsPluginsXml : "",
                 showToFront: typeof (showToFront) == 'boolean' ? showToFront : true,
@@ -974,7 +1154,9 @@
                 func: func,
                 param: paramEx,
                 urlBase: GetUrlBase(),
-                callback: callback
+                callBack: callBack,
+                timeout: timeout,
+                startparam: startparam,
             })
         }
 
@@ -998,27 +1180,34 @@
         /**
          * 以静默模式启动客户端
          * @param {string} name                 必传参数，加载项名称
-         * @param {function({int, string})} [callback]         回调函数，status = 0 表示成功，失败请查看message信息
+         * @param {*} timeout       等待wps客户端启动的超时时间，单位为ms
+         * @param {*} startparam    传递给wps客户端的启动参数
+         * @param {function({int, string})} [callBack]         回调函数，status = 0 表示成功，失败请查看message信息
          */
-        this.StartWpsInSilentMode = function (name, callback) {
+        this.StartWpsInSilentMode = function (name, callBack, timeout, startparam) {
             function initCallback(res) {
                 //this不是WpsClient，是options对象
-                if (res.status !== 0 || serverVersion < "1.0.1" || this.client.single == true) {
-                    if (callback)
-                        callback(res);
-                    if (serverVersion < "1.0.1" || this.client.single == true)
-                        RegWebNotify(clientType, name, this.client.onMessage)
+                if (res.status !== 0 || serverVersion < "1.0.1" || this.wpsclient.single == true) {
+                    if (callBack)
+                        callBack(res);
+                    if (serverVersion < "1.0.1" || this.wpsclient.single == true)
+                        RegWebNotify(clientType, name, this.wpsclient.onMessage)
                     return;
                 }
-                if (this.client.clientId == "") {
-                    this.client.clientId = JSON.parse(res.response).clientId;
-                    window.wpsclients[window.wpsclients.length] = { name: name, client: this.client };
+                var jsonObj = JSON.parse(res.response);
+                if (this.wpsclient.clientId == "") {
+                    this.wpsclient.clientId = jsonObj.clientId;
                 }
-                res.response = JSON.stringify(JSON.parse(res.response).data);
-                if (callback) {
-                    callback(res);
+                if (serverVersion < "1.0.3") {
+                    res.response = JSON.stringify(jsonObj.data);
                 }
-                this.client.RegWebNotify(name);
+                else {
+                    res.response = decode(jsonObj.data);
+                }
+                if (callBack) {
+                    callBack(res);
+                }
+                this.wpsclient.RegWebNotify(name);
             }
             var paramEx = {
                 jsPluginsXml: this.jsPluginsXml,
@@ -1031,19 +1220,21 @@
                 func: "",
                 param: paramEx,
                 urlBase: GetUrlBase(),
-                callback: initCallback
+                callBack: initCallback,
+                timeout: timeout,
+                startparam: startparam,
             })
         }
 
         /**
          * 显示客户端到最前面
          * @param {string} name             必传参数，加载项名称
-         * @param {function({int, string})} [callback]     回调函数
+         * @param {function({int, string})} [callBack]     回调函数
          */
-        this.ShowToFront = function (name, callback) {
+        this.ShowToFront = function (name, callBack) {
             if (serverVersion < "1.0.1") {
-                if (callback) {
-                    callback({
+                if (callBack) {
+                    callBack({
                         status: 4,
                         message: "当前客户端不支持，请升级客户端"
                     });
@@ -1052,7 +1243,7 @@
                 return;
             }
             if (this.clientId == "") {
-                if (callback) callback({
+                if (callBack) callBack({
                     status: 3,
                     message: "没有静默启动客户端"
                 });
@@ -1068,19 +1259,19 @@
                 func: "",
                 param: paramEx,
                 urlBase: GetUrlBase(),
-                callback: callback
+                callBack: callBack
             })
         }
 
         /**
          * 关闭未显示出来的静默启动客户端
          * @param {string} name             必传参数，加载项名称
-         * @param {function({int, string})} [callback]     回调函数
+         * @param {function({int, string})} [callBack]     回调函数
          */
-        this.CloseSilentClient = function (name, callback) {
+        this.CloseSilentClient = function (name, callBack) {
             if (serverVersion < "1.0.1") {
-                if (callback) {
-                    callback({
+                if (callBack) {
+                    callBack({
                         status: 4,
                         message: "当前客户端不支持，请升级客户端"
                     });
@@ -1089,7 +1280,7 @@
                 return;
             }
             if (this.clientId == "") {
-                if (callback) callback({
+                if (callBack) callBack({
                     status: 3,
                     message: "没有静默启动客户端"
                 });
@@ -1110,8 +1301,8 @@
 
             function closeSilentClient(res) {
                 if (res.status == 0)
-                    this.client.clientId = ""
-                if (callback) callback(res);
+                    this.wpsclient.clientId = ""
+                if (callBack) callBack(res);
                 return;
             }
             this.initWpsClient({
@@ -1119,19 +1310,19 @@
                 func: func,
                 param: paramEx,
                 urlBase: GetUrlBase(),
-                callback: closeSilentClient
+                callBack: closeSilentClient
             })
         }
 
         /**
          * 当前客户端是否在运行，使用WpsClient.IsClientRunning()进行调用
-         * @param {function({int, string})} [callback]      回调函数，"Client is running." 客户端正在运行
+         * @param {function({int, string})} [callBack]      回调函数，"Client is running." 客户端正在运行
          *                                                  "Client is not running." 客户端没有运行
          */
-        this.IsClientRunning = function (callback) {
+        this.IsClientRunning = function (callBack) {
             if (serverVersion < "1.0.1") {
-                if (callback) {
-                    callback({
+                if (callBack) {
+                    callBack({
                         status: 4,
                         message: "当前客户端不支持，请升级客户端"
                     });
@@ -1139,7 +1330,7 @@
                 }
                 return;
             }
-            IsClientRunning(this.clientType, callback, this)
+            IsClientRunning(this.clientType, callBack, this)
         }
     }
 
@@ -1153,14 +1344,15 @@
         startWps({
             url: url,
             sendData: JSON.stringify({ serverId: serverId }),
-            callback: function (res) {
+            callBack: function (res) {
                 if ((!serverId && !bMultiUser) || bMultiUser)
                     g_isSdkInited = true;
-                if (res.status !== 0) {
+                if (res.status !== 0 && res.message !== "Subserver not available.") {
                     serverVersion = "wait"
                     return;
                 }
-                serverVersion = res.response;
+                if (res.response && serverVersion == "wait")
+                    serverVersion = res.response;
             },
             tryCount: 1,
             bPop: false,
@@ -1170,6 +1362,19 @@
     }
     InitSdk(false);
 
+    function GetVersion(callBack){
+        var url = GetUrlBase() + "/version";
+        startWps({
+            url: url,
+            data: "",
+            callBack: function (res) {
+                callBack&&callBack(res);
+            },
+            tryCount: 4,
+            bPop: true,
+            timeout: 5000
+        });
+    }
     if (typeof noGlobal === "undefined") {
         window.WpsInvoke = WpsInvoke;
         window.WpsClient = WpsClient;
@@ -1180,10 +1385,10 @@
     /**
      * 当前客户端是否在运行，使用WpsInvoke.IsClientRunning()进行调用
      * @param {string} clientType       加载项类型
-     * @param {function} [callback]      回调函数，"Client is running." 客户端正在运行
+     * @param {function} [callBack]      回调函数，"Client is running." 客户端正在运行
      *                                   "Client is not running." 客户端没有运行
      */
-    function IsClientRunning(clientType, callback, wpsclient) {
+    function IsClientRunning(clientType, callBack, wpsclient) {
         var url = GetUrlBase() + "/isRunning";
         var wrapper = {
             id: wpsclient == undefined ? undefined : wpsclient.clientId,
@@ -1194,12 +1399,12 @@
         startWps({
             url: url,
             sendData: wrapper,
-            callback: callback,
+            callBack: callBack,
             tryCount: 1,
             bPop: false,
             timeout: 2000,
             concurrent: true,
-            client: wpsclient
+            wpsclient: wpsclient
         });
     }
 
@@ -1207,18 +1412,30 @@
      * 获取publish.xml的内容
      * @param {*} callBack 回调函数
      */
-    function WpsAddonGetAllConfig(callBack) {
-        var baseData = JSON.stringify({ serverId: serverId });
-        startWps({
+    function WpsAddonGetAllConfigInner(callBack) {
+        var options = {
             url: GetUrlBase() + "/publishlist",
             type: "POST",
-            sendData: baseData,
-            callback: callBack,
+            sendData: JSON.stringify({ serverId: serverId }),
+            callBack: callBack,
             tryCount: 3,
             bPop: true,
             timeout: 5000,
-            concurrent: true
-        });
+            concurrent: true,
+        }
+        startWps(options);
+    }
+
+    /**
+     * 先获取一下版本号
+     * @param {*} callBack 回调函数
+     */
+    function WpsAddonGetAllConfig(callBack) {
+        var options = {
+            callBack: callBack,
+            isPublish: true,
+        }
+        WpsStartWrapVersionInner(options);
     }
 
     /**
@@ -1283,7 +1500,7 @@
             url: GetUrlBase() + "/deployaddons/runParams",
             type: "POST",
             sendData: data,
-            callback: callBack,
+            callBack: callBack,
             tryCount: 3,
             bPop: true,
             timeout: 0,
@@ -1332,7 +1549,7 @@
             "addonType": element.addonType,
             "online": element.online,
             "version": element.version,
-            "time":new Date().getTime()
+            "time": new Date().getTime()
         }
         return FormatSendData(data);
     }
@@ -1347,7 +1564,7 @@
         if (IEVersion() < 10)
             eval("strData = '" + JSON.stringify(strData) + "';");
 
-        if (serverVersion >= "1.0.2"  && serverId != undefined) {
+        if (serverVersion >= "1.0.2" && serverId != undefined) {
             var base64Data = encode(strData);
             return JSON.stringify({
                 serverId: serverId,
@@ -1363,12 +1580,13 @@
         getAllConfig: WpsAddonGetAllConfig,
         verifyStatus: WpsAddonVerifyStatus,
         enable: WpsAddonEnable,
-        disable: WpsAddonDisable
+        disable: WpsAddonDisable,
+        disableall: WpsAddonDisableAll
     }
 
     if (typeof noGlobal === "undefined") {
         window.WpsAddonMgr = WpsAddonMgr;
     }
 
-    return { WpsInvoke: WpsInvoke, WpsAddonMgr: WpsAddonMgr, version: "1.0.27" };
+    return { WpsInvoke: WpsInvoke, WpsAddonMgr: WpsAddonMgr, version: "1.0.32" };
 });

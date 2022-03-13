@@ -25,16 +25,16 @@
 
 **以下集成方式需要联系我们的项目经理获取专业版**
 - [ ] 嵌入浏览器——ActiveX，IE，Windows环境【待入库】
-- [x] [嵌入浏览器——NPAPI，Firefox/360/奇安信，Windows环境](np-example/browser-integration-wps/README.md)【已入库】
-- [x] [嵌入浏览器——NPAPI，Firefox/360/奇安信，Linux环境](np-example/browser-integration-wps/README.md)【已入库】
-- [x] [嵌入Java客户端——Windows环境](java/README.md)【已入库】
-- [x] [嵌入Java客户端——Linux环境](java/README.md)【已入库】
-- [x] [嵌入C++客户端——Windows环境](https://kdocs.cn/l/c7jl7x76T)【待入库】
-- [x] [嵌入C++客户端——Linux环境，QT](cpp/README.md)【已入库】
-- [x] [嵌入WPF客户端——Windwos环境，C#](https://kdocs.cn/l/ce4rXtmFS)【待入库】
-- [x] [开发Com加载项——Windwos环境，VB/C++](https://kdocs.cn/l/c7jl7x76T)【待入库】
-- [x] [开发VSTO加载项——Windows环境，C#](https://kdocs.cn/l/ce4rXtmFS)【待入库】
-- [x] [开发加载项——Linxu环境，C++](https://kdocs.cn/l/c1cSaydPa)【待入库】
+- [x] [嵌入浏览器——NPAPI，Firefox/360/奇安信，Windows环境](np-example/browser-integration-wps/README.md)【点击获取】
+- [x] [嵌入浏览器——NPAPI，Firefox/360/奇安信，Linux环境](np-example/browser-integration-wps/README.md)【点击获取】
+- [x] [嵌入Java客户端——Windows环境](java/README.md)【点击获取】
+- [x] [嵌入Java客户端——Linux环境](java/README.md)【点击获取】
+- [x] [嵌入C++客户端——Windows环境](https://kdocs.cn/l/c7jl7x76T)【点击获取】
+- [x] [嵌入C++客户端——Linux环境，QT](cpp/README.md)【点击获取】
+- [x] [嵌入WPF客户端——Windwos环境，C#](https://kdocs.cn/l/ce4rXtmFS)【点击获取】
+- [x] [开发Com加载项——Windwos环境，VB/C++](https://kdocs.cn/l/c7jl7x76T)【点击获取】
+- [x] [开发VSTO加载项——Windows环境，C#](https://kdocs.cn/l/ce4rXtmFS)【点击获取】
+- [x] [开发加载项——Linxu环境，C++](https://kdocs.cn/l/c1cSaydPa)【点击获取】
 
 ---
 

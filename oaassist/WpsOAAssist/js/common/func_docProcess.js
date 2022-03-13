@@ -5,7 +5,6 @@
 function NewFile(params) {
     //获取WPS Application 对象
     var wpsApp = wps.WpsApplication();
-    wps.PluginStorage.setItem(constStrEnum.IsInCurrOADocOpen, true); //设置OA打开文档的临时状态
     //判断一下isOfficialDocument是否通过公文写作打开
     var doc;
     if (params.isOfficialDocument) {
@@ -14,19 +13,18 @@ function NewFile(params) {
     } else {
         doc = wpsApp.Documents.Add(); //新增OA端文档
     }
-    wps.PluginStorage.setItem(constStrEnum.IsInCurrOADocOpen, false);
 
     //检查系统临时文件目录是否能访问
     if (wps.Env && wps.Env.GetTempPath) {
         if (params.newFileName) {
             //按OA传入的文件名称保存
-            doc.SaveAs2($FileName = wps.Env.GetTempPath() + "/" + params.newFileName, undefined, undefined, undefined, false);
+            doc.SaveAs2(wps.Env.GetTempPath() + "/" + params.newFileName, returnFormatType(params.newFileName), undefined, undefined, false);
         } else {
             //OA传入空文件名称，则保存成系统时间文件
             if (params.isOfficialDocument) {
-                doc.SaveAs2($FileName = wps.Env.GetTempPath() + "/OA_" + currentTime(), 0, undefined, undefined, false);
+                doc.SaveAs2(wps.Env.GetTempPath() + "/OA_" + currentTime(), 0, undefined, undefined, false);
             } else {
-                doc.SaveAs2($FileName = wps.Env.GetTempPath() + "/OA_" + currentTime(), undefined, undefined, undefined, false);
+                doc.SaveAs2(wps.Env.GetTempPath() + "/OA_" + currentTime(), returnFormatType("/OA_" + currentTime()), undefined, undefined, false);
             }
         }
     } else {
@@ -61,9 +59,6 @@ function OpenFile(params) {
     if (l_strFileUrl) {
         //下载文档之前，判断是否已下载该文件
         if (pCheckIsExistOpenOADoc(l_strFileUrl) == true) {
-            //如果找到相同OA地址文档，则给予提示
-            wps.WpsApplication().WindowState=1;
-            wps.WpsApplication().Activate(); //把WPS对象置前
             //根据OA助手对是否允许再次打开相同文件的判断处理
             var l_AllowOADocReOpen = false;
             l_AllowOADocReOpen = wps.PluginStorage.getItem(constStrEnum.AllowOADocReOpen);
@@ -81,6 +76,8 @@ function OpenFile(params) {
                 var nDocCount_New = wps.WpsApplication().Documents.Count;
                 if (nDocCount_New > nDocCount) {
                     doc = wps.WpsApplication().ActiveDocument;
+                }else{
+                    return ;
                 }
             }
         } else {
@@ -194,7 +191,8 @@ function GetServerTemplateData(template, pTemplateDataUrl) {
                 var bookmark = Bookmarks.Item(it.name);
                 let bookStart = bookmark.Range.Start;
                 let bookEnd = bookmark.Range.End;
-                let start = template.Range().End
+                let start = template.Range().End;
+                var sc
                 //方案1，直接替换，手动添加书签
                 // if (bookmark) {
                 //     if (!it.type || it.type === "text") {
@@ -222,9 +220,11 @@ function GetServerTemplateData(template, pTemplateDataUrl) {
                 }
                 var selection=wps.WpsApplication().ActiveWindow.Selection;
                 if (bookmark.Range.Text) {
+                    var scaling=bookmark.Range.Font.Scaling
                     selection.Start = bookmark.Range.End - (bookEnd - bookStart);
                     selection.End = bookmark.Range.End;
                     selection.Cut();
+                    bookmark.Range.Font.Scaling=scaling;
                 } else {
                     selection.Start = bookmark.Range.End;
                     selection.End = bookmark.Range.End+it.text.length;
@@ -456,13 +456,34 @@ function pCheckIsExistOpenOADoc(FileURL) {
                 continue;
             var l_objParam = JSON.parse(l_strParam)
             if (l_objParam.fileName == FileURL) {
+                l_objDoc.Activate()
                 return true;
             }
         }
         return false;
     }
 }
-
+//根据文件DocID获取到对应文档
+function getDocIDDocument(docid){
+    if(docid){
+        return ;
+    }
+    var l_Doc=null;
+    var l_DocCount = wps.WpsApplication().Documents.Count;
+    if(l_DocCount>=1){
+        for (var l_index = 1; l_index <= l_DocCount; l_index++) {
+            var l_objDoc = wps.WpsApplication().Documents.Item(l_index);
+            if (l_objDoc.DocID == docid) {
+                l_Doc=l_objDoc
+                break;
+            }
+        }
+    }
+    if(!l_Doc){
+        alert("找不到对应文档");
+    }
+    return l_Doc;
+}
 //Office文件打开后，设置该文件属性：从服务端来的OA文件
 function pSetOADocumentFlag(doc, params) {
     if (!doc) {

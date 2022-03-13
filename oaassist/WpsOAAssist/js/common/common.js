@@ -319,9 +319,7 @@ function closeWpsIfNoDocument() {
 function activeTab() {
     //启动WPS程序后，默认显示的工具栏选项卡为ribbon.xml中某一tab
     if (wps.ribbonUI)
-    
-    wps.ribbonUI.ActivateTab('TabReviewWord');
-        // wps.ribbonUI.ActivateTab('WPSWorkExtTab');
+        wps.ribbonUI.ActivateTab('WPSWorkExtTab');
 }
 
 function showOATab() {
@@ -350,7 +348,7 @@ function getDemoSealPath() {
         url = url.substring(0, url.lastIndexOf("/"));
     }
     if (url.length !== 0)
-        url = url.concat("/template/OA模板：公章.png");
+        url = url.concat("/template/OA模板公章.png");
 
     if (url.startsWith("file:///"))
         url = url.substr("file:///".length);
@@ -399,39 +397,65 @@ function StringToUint8Array(string) {
 function InsertFile(url,bookmark,activeDoc,callback,callback1){ 
     DownloadFile(url,function(url){
         wps.WpsApplication().Options.PasteFormatBetweenStyledDocuments=0//跨文档保存时，设置保存源文档格式
+        //清空原文页脚
+        var footer=activeDoc.Sections.Item(1).Footers.Item(1);
+        footer.Range.Text="";
+
         var selection=activeDoc.ActiveWindow.Selection;
-        selection.WholeStory();
+        selection.WholeStory();//全选正文并剪切
+        var oriList=getOrientation(activeDoc);
         selection.Cut();
-        var doc=wps.WpsApplication().Documents.Open(url,undefined,undefined,undefined,undefined,undefined,undefined,undefined,undefined,undefined,undefined,false);
+        var doc=wps.WpsApplication().Documents.Open(url,undefined,undefined,undefined,undefined,undefined,undefined,undefined,undefined,undefined,undefined,false);//隐藏打开红头文件
         //var doc1 = wps.WpsApplication().ActiveDocument;
+        var pageInfomation=getPageInfo(doc); //获取模板页面信息
         var selection1=doc.ActiveWindow.Selection;
         var bookMarks=doc.Bookmarks;
         if (bookMarks.Exists(bookmark)) {
             var bookmark1 = bookMarks.Item(bookmark);
             bookmark1.Range.Select(); //获取指定书签位置
             // selection1.InsertBreak(3)
-            selection1.PasteAndFormat(16)
+            // selection1.Paste();
+            var index=selection1.Information(2)
+            selection1.PasteAndFormat(16)//将内容带格式粘贴到模板中
+            setOrientation(oriList,index,doc)
         } else {
             alert("套红头失败，您选择的红头模板没有对应书签：" + bookmark);
         }
-          selection.PageSetup.TopMargin=selection1.PageSetup.TopMargin
-          selection.PageSetup.BottomMargin=selection1.PageSetup.BottomMargin
-          selection.PageSetup.LeftMargin=selection1.PageSetup.LeftMargin
-          selection.PageSetup.RightMargin=selection1.PageSetup.RightMargin
 
+        selection.PageSetup.TopMargin=pageInfomation.TopMargin
+        selection.PageSetup.BottomMargin=pageInfomation.BottomMargin
+        selection.PageSetup.LeftMargin=pageInfomation.LeftMargin
+        selection.PageSetup.RightMargin=pageInfomation.RightMargin
+        selection.PageSetup.FooterDistance=pageInfomation.FooterDistance
+        selection.PageSetup.HeaderDistance=pageInfomation.HeaderDistance
+        // selection.PageSetup.OddAndEvenPagesHeaderFooter=pageInfomation.OddAndEvenPagesHeaderFooter//设置是否奇偶页不同
+       
+        
+       
          selection1.WholeStory();
          selection1.Copy();
-         activeDoc.Activate()
-         doc.Close(0);
+         
+        activeDoc.Activate()
+         
+       
          selection.WholeStory()
-        //  selection.InsertBreak(3)//插入连续分节符
-         selection.PasteAndFormat(16)
+        //  selection.InsertBreak(3) //插入连续分节符
+         selection.PasteAndFormat(16);
+         //粘贴完成之后，设置页码
+         if(pageInfomation.isHavePageNumber){
+            var pageNum=pageInfomation.PageNumbers;
+            setPageNumber(pageNum.Left,pageNum.NumberStyle,pageNum.Text,pageNum.Size,pageNum.NameFarEast,pageNum.NameAscii,activeDoc)
+        }
+        if(pageInfomation.DifferentFirstPageHeaderFooter){
+            doc.Sections.Item(doc.Sections.Count).Footers.Item(1).Range.Copy();
+            activeDoc.Sections.Item(1).Footers.Item(1).Range.Paste();
+        }
+         //复制并粘贴模板页码
+         doc.Close(0);
         callback&&callback();
-        callback1&&callback1();
+        callback1&&callback1()
     },undefined,true)
-    
 }
-
 
 /**
  * WPS下载文件到本地打开（业务系统可根据实际情况进行修改）
@@ -441,17 +465,14 @@ function InsertFile(url,bookmark,activeDoc,callback,callback1){
  * @param {*} isDelete 操作完成后，是否删除本地文件
  */
 function DownloadFile(url, callback, fileName, isDelete) {
+    url=url.indexOf("?")>-1?url+"&newTime="+new Date().getTime():url+"?newTime="+new Date().getTime()//给文件下载地址添加时间戳
     var xhr = new XMLHttpRequest();
     xhr.onreadystatechange = function () {
         if (this.readyState == 4 && this.status == 200) {
             //需要业务系统的服务端在传递文件流时，确保请求中的参数有filename
             fileName = fileName ? fileName : pGetFileName(xhr, url)
             //落地打开模式下，WPS会将文件下载到本地的临时目录，在关闭后会进行清理
-            
-            // wps.Env.GetTempPath()临时目录
-            //wps.Env.GetHomePath()+"/桌面" 桌面
             var path = wps.Env.GetTempPath() + "/" + fileName;
-            wps.FileSystem.Remove(path)
             var reader = new FileReader();
             reader.onload = function () {
                 wps.FileSystem.writeAsBinaryString(path, reader.result);
@@ -465,6 +486,36 @@ function DownloadFile(url, callback, fileName, isDelete) {
     xhr.responseType = 'blob';
     xhr.send();
 }
+/**
+ * WPS下载文件到本地打开（业务系统可根据实际情况进行修改）
+ * @param {*} url 文件流的下载路径
+ * @param {*} callback 下载后的回调
+ * @param {*} fileName 自定义文件名称
+ * @param {*} isDelete 操作完成后，是否删除本地文件
+ */
+ function DownloadFileOnline(url, callback, fileName, isDelete) {
+    url=url.indexOf("?")>-1?url+"&newTime="+new Date().getTime():url+"?newTime="+new Date().getTime()//给文件下载地址添加时间戳
+    var xhr = new XMLHttpRequest();
+    xhr.onreadystatechange = function () {
+        if (this.readyState == 4 && this.status == 200) {
+            //需要业务系统的服务端在传递文件流时，确保请求中的参数有filename
+            fileName = fileName ? fileName : pGetFileName(xhr, url)
+            //落地打开模式下，WPS会将文件下载到本地的临时目录，在关闭后会进行清理
+            var path = wps.Env.GetTempPath() + "/" + fileName;
+            var reader = new FileReader();
+            reader.onload = function () {
+                var l_Doc=wps.Application.Documents.OpenFromBinaryString({arg0:fileName,arg1:reader.result});
+                callback(l_Doc);
+                isDelete && wps.FileSystem.Remove(path)
+            };
+            reader.readAsBinaryString(xhr.response);
+        }
+    }
+    xhr.open('GET', url);
+    xhr.responseType = 'blob';
+    xhr.send();
+}
+
 
 
 /**
@@ -481,6 +532,49 @@ function UploadFile(strFileName, strPath, uploadPath, strFieldName, OnSuccess, O
     xhr.open('POST', uploadPath);
 
     var fileData = wps.FileSystem.readAsBinaryString(strPath);
+    var data = new FakeFormData();
+    if (strFieldName == "" || typeof strFieldName == "undefined"){//如果业务方没定义，默认设置为'file'
+        strFieldName = 'file';
+    }
+    data.append(strFieldName, {
+        name: utf16ToUtf8(strFileName), //主要是考虑中文名的情况，服务端约定用utf-8来解码。
+        type: "application/octet-stream",
+        getAsBinary: function () {
+            return fileData;
+        }
+    });
+    xhr.onreadystatechange = function () {
+        if (xhr.readyState == 4) {
+            if (xhr.status == 200)
+                OnSuccess(xhr.response)
+            else
+                OnFail(xhr.response);
+        }
+    };
+    xhr.setRequestHeader("Cache-Control", "no-cache");
+    xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+    if (data.fake) {
+        xhr.setRequestHeader("Content-Type", "multipart/form-data; boundary=" + data.boundary);
+        var arr = StringToUint8Array(data.toString());
+        xhr.send(arr);
+    } else {
+        xhr.send(data);
+    }
+}
+
+
+/**
+ * WPS上传文件到服务端（业务系统可根据实际情况进行修改，为了兼容中文，服务端约定用UTF-8编码格式）
+ * @param {*} strFileName 上传到服务端的文件名称（包含文件后缀）
+ * @param {*} uploadPath 上传文件的服务端地址
+ * @param {*} strFieldName 业务调用方自定义的一些内容可通过此字段传递，默认赋值'file'
+ * @param {*} OnSuccess 上传成功后的回调
+ * @param {*} OnFail 上传失败后的回调
+ */
+ function UploadOnlineFile(strFileName, uploadPath, strFieldName, OnSuccess, OnFail) {
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', uploadPath);
+    var fileData = wps.Application.ActiveDocument.SaveAsBinaryString();
     var data = new FakeFormData();
     if (strFieldName == "" || typeof strFieldName == "undefined"){//如果业务方没定义，默认设置为'file'
         strFieldName = 'file';
@@ -631,6 +725,9 @@ function returnFormatType(newName){
         type:"doc",
         value:16
     },{
+        type:"wps",
+        value:16
+    },{
         type:"pdf",
         value:17
     },{
@@ -661,4 +758,197 @@ function toO(num,bs=16){
     }else{
         return "0"+num.toString(bs)
     }
+}
+
+//common.js中新增下面两个方法
+/**
+ * 页脚信息分四种情况
+ * 首页不同：
+ * @param {*} doc 需要获取页码信息的文档
+ * 
+ */
+ function getPageInfo(doc){
+    var app=wps.WpsApplication();
+    var pageInfomation={};
+    var l_doc=doc?doc:app.ActiveDocument;
+    var selection=l_doc.ActiveWindow.Selection;
+    pageInfomation.OddAndEvenPagesHeaderFooter=selection.PageSetup.OddAndEvenPagesHeaderFooter;//获取是否奇偶页不同
+    pageInfomation.DifferentFirstPageHeaderFooter=selection.PageSetup.DifferentFirstPageHeaderFooter;//获取是否是首页不同
+    pageInfomation.TopMargin=selection.PageSetup.TopMargin
+    pageInfomation.BottomMargin=selection.PageSetup.BottomMargin
+    pageInfomation.LeftMargin=selection.PageSetup.LeftMargin
+    pageInfomation.RightMargin=selection.PageSetup.RightMargin
+    pageInfomation.FooterDistance=selection.PageSetup.FooterDistance
+    pageInfomation.HeaderDistance=selection.PageSetup.HeaderDistance
+    var section=l_doc.Sections.Item(1);
+    var footer=section.Footers.Item(wps.Enum.wdHeaderFooterPrimary)//获取页脚
+    var shape=footer.Shapes.Item(1);
+    pageInfomation.isHavePageNumber=false;
+    if(shape&&shape.TextFrame&&shape.TextFrame.TextRange){//有页码
+        pageInfomation.isHavePageNumber=true;
+        pageInfomation.PageNumbers={};
+        pageInfomation.PageNumbers.Left=shape.Left;
+        var textRange=shape.TextFrame.TextRange;
+        pageInfomation.PageNumbers.Size=textRange.Font.Size;
+        pageInfomation.PageNumbers.NameFarEast=textRange.Font.NameFarEast;
+        pageInfomation.PageNumbers.NameAscii=textRange.Font.NameAscii;
+        pageInfomation.PageNumbers.NumberStyle=footer.PageNumbers.NumberStyle;
+        pageInfomation.PageNumbers.Text="X";
+        var textArr=textRange.Text.split("");
+        if(textArr.includes("—")){
+            pageInfomation.PageNumbers.Text="— X —";
+            return pageInfomation;
+        }
+        if(textArr.includes("/")){
+            pageInfomation.PageNumbers.Text="X / y";
+            return pageInfomation;
+        }
+        var yeCount=0;
+        for(var i=0;i<textArr.length;i++){
+            if(textArr[i]=="页"){
+                yeCount++;
+            }
+        }
+        if(yeCount==1){
+            pageInfomation.PageNumbers.Text="第 X 页";
+            return pageInfomation;
+        }
+        if(pageInfomation.PageNumbers.NumberStyle==37&&yeCount==2){
+            pageInfomation.PageNumbers.Text="第 X 页 共 Y 页";
+            return pageInfomation;
+        }
+        if(yeCount==2){
+            pageInfomation.PageNumbers.Text="第 X 页 共 y 页";
+            return pageInfomation;
+        }
+        // 
+    }
+    return pageInfomation;
+}
+function getOrientation(doc){
+    var oriList=[];
+    var app=wps.WpsApplication();
+    var l_doc=doc?doc:app.ActiveDocument;
+    for(var i=1;i<=l_doc.Sections.Count;i++){//清空页脚
+        oriList.push(l_doc.Sections.Item(i).PageSetup.Orientation)     
+    }
+    return oriList;
+}
+function setOrientation(oriList,index,doc){
+    var app=wps.WpsApplication();
+    var l_doc=doc?doc:app.ActiveDocument;
+    for(var i=index;i<=l_doc.Sections.Count;i++){//清空页脚
+        l_doc.Sections.Item(i).PageSetup.Orientation=oriList[i-index];   
+    }
+    return oriList;
+}
+
+/**
+ * 
+ * @param {*} position 页码位置
+ * // -999998;左侧
+ * // -999995;居中
+ * // -999996;右侧
+ * // -999993;双面打印1
+ * // -999994;双面打印2
+ * @param {*} applyRange 应用范围
+ * 1：整篇文档
+ * 2：本节及之后
+ * 3：本节
+ * @param {*} numberStyle 页码样式
+ * @param {*} text 页码文字
+ * @param {*} activeSection 插入的当前节，可不传
+ * 
+ * 
+ */
+function setPageNumber(position,numberStyle,text,size,nameFarEast,nameAscii,doc,applyRange=1,activeSection){
+    var positionKey=-999998;//默认是左侧
+    switch(position){
+        case 1:
+            positionKey=-999998;
+            break;
+        case 2:
+            positionKey=-999995;
+            break;
+        case 3:
+            positionKey=-999996;
+            break;
+        case 4:
+            positionKey=-999993;
+            break;
+        case 5:
+            positionKey=-999994;
+            break;
+        default:
+            positionKey=position;
+            break;
+    }
+    var app=wps.WpsApplication();
+    var l_doc=doc?doc:app.ActiveDocument;
+    for(var i=1;i<=l_doc.Sections.Count;i++){//清空页脚
+        var footer=l_doc.Sections.Item(i).Footers.Item(wps.Enum.wdHeaderFooterPrimary);
+        footer.Range.Text=""
+        if(i==2){
+            l_doc.Sections.Item(i).Footers.Item(wps.Enum.wdHeaderFooterPrimary).LinkToPrevious=true;//设置同前节
+        }
+        for(var j=footer.Shapes.Count;j>0;j--){
+            footer.Shapes.Item(j).Delete();
+        }
+        
+    }
+    var section=activeSection&&applyRange!=1?activeSection:l_doc.Sections.Item(1);//如果没有传递插入页码的节，那么默认取第一节
+    var footer=section.Footers.Item(wps.Enum.wdHeaderFooterPrimary)//获取页脚
+    footer.Shapes.AddTextbox(wps.Enum.msoTextOrientationHorizontal, 0, 0, 144, 144, footer.Range);//插入文本框
+    var shape=footer.Shapes.Item(1);
+    shape.Fill.Visible =wps.Enum.msoFalse;
+    shape.Line.Visible = wps.Enum.msoFalse;
+    var textFrame=shape.TextFrame
+    textFrame.AutoSize = 1;
+    textFrame.WordWrap = 0;
+    textFrame.MarginLeft = 0;
+    textFrame.MarginRight = 0;
+    textFrame.MarginTop = 0;
+    textFrame.MarginBottom = 0;
+    textFrame.Orientation = wps.Enum.msoTextOrientationHorizontal;
+    shape.RelativeHorizontalPosition = wps.Enum.wdRelativeHorizontalPositionMargin;
+    shape.Left = positionKey;
+    shape.RelativeVerticalPosition = wps.Enum.wdRelativeVerticalPositionParagraph;
+    shape.Top = 0;
+    shape.WrapFormat.Type = wps.Enum.wdWrapNone;
+    var textRange=shape.TextFrame.TextRange
+    textRange.Text = text;//添加页码模板
+    if(text=="X / y"||text=="第 X 页 共 y 页"){
+        textRange.Select();
+        l_doc.ActiveWindow.Selection.Find.Execute("y");
+        textRange.Fields.Add(l_doc.ActiveWindow.Selection.Range, wps.Enum.wdFieldNumPages, "", true);
+    }else if(text=="第 X 页 共 Y 页"){
+        l_doc.ActiveWindow.Selection.Find.Execute("y");
+        textRange.Fields.Add(l_doc.ActiveWindow.Selection.Range, wps.Enum.wdFieldNumPages, "\\* CHINESENUM3", true);
+    }
+    textRange.Select();
+    l_doc.ActiveWindow.Selection.Find.Execute("X");
+    textRange.Fields.Add(l_doc.ActiveWindow.Selection.Range, wps.Enum.wdFieldPage, "", true);
+    footer.PageNumbers.NumberStyle = numberStyle;
+    textRange.Font.Size=size;
+    if(nameFarEast){
+        textRange.Font.NameFarEast=nameFarEast
+    }
+    if(nameAscii){
+        textRange.Font.NameAscii=nameAscii
+    }
+    
+    if(applyRange==1){
+        for(var i=2;i<=l_doc.Sections.Count;i++){//从第二节开始，设置同前节
+            l_doc.Sections.Item(i).Footers.Item(wps.Enum.wdHeaderFooterPrimary).LinkToPrevious=true;//取消同前节
+        }
+    }
+    if(applyRange==2){//本节及以后
+        footer.PageNumbers.RestartNumberingAtSection=true;
+        footer.PageNumbers.StartingNumber = 1;//重新编号
+    }
+    if(applyRange==3&&l_doc.Sections.Count>=section.Index+1){//本节
+        l_doc.Sections.Item(section.Index+1).Footers.Item(wps.Enum.wdHeaderFooterPrimary).LinkToPrevious=false;//取消同前节
+    }
+    l_doc.ActiveWindow.ActivePane.View.SeekView=0;
+    l_doc.Range(0,0).Select();
 }

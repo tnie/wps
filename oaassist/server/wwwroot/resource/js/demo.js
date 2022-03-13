@@ -111,6 +111,10 @@ function SwitchTab(crtTabIndex) {
             indexFrame.innerHTML = "<iframe src='./resource/wpp.html?pluginsMode=" + pluginsMode + "' id='iframe_wpp' frameborder='0' width='100%' height='0%'></iframe>"
             document.getElementById("iframe_wpp").setAttribute("height", "100%");
             break;
+        case 3:
+            indexFrame.innerHTML = "<iframe src='./resource/pdf.html?pluginsMode=" + pluginsMode + "' id='iframe_pdf' frameborder='0' width='100%' height='0%'></iframe>"
+            document.getElementById("iframe_pdf").setAttribute("height", "100%");
+            break;
         default:
             break;
     }
