@@ -1434,6 +1434,7 @@
         var options = {
             callBack: callBack,
             isPublish: true,
+            urlBase:GetUrlBase()
         }
         WpsStartWrapVersionInner(options);
     }
@@ -1588,5 +1589,5 @@
         window.WpsAddonMgr = WpsAddonMgr;
     }
 
-    return { WpsInvoke: WpsInvoke, WpsAddonMgr: WpsAddonMgr, version: "1.0.32" };
+    return { WpsInvoke: WpsInvoke, WpsAddonMgr: WpsAddonMgr, WpsClient: WpsClient, WebNotifyUseTimeout: WebNotifyUseTimeout, EnableMultiUser: EnableMultiUser, version: "1.0.32" };
 });

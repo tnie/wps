@@ -88,7 +88,6 @@ function OpenFile(params) {
                         alert("从服务端下载路径：" + l_strFileUrl + "\n" + "获取文件下载失败！");
                         return null;
                     }
-
                     doc = pDoOpenOADocProcess(params, path);
                     pOpenFile(doc, params, l_IsOnlineDoc);
                 });

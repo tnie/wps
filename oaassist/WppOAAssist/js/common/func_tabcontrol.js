@@ -17,7 +17,7 @@ var EnumDocLandMode = {
 
 //加载时会执行的方法
 function OnWPSWorkTabLoad(ribbonUI) {
-    wps.ribbonUI = ribbonUI;
+    // wps.ribbonUI = ribbonUI;
 
     OnJSWorkInit(); //初始化文档事件(全局参数,挂载监听事件)
     activeTab(); // 激活OA助手菜单
@@ -114,6 +114,10 @@ function pShowRibbonGroupByOADocParam(CtrlID) {
     }
     // 添加OA菜单判断
     if (CtrlID == "WPSWorkExtTab") {
+        if (wps.control.Context) { //拖拽的情况
+            let l_value = GetDocParamsValue(wps.control.Context.Presentation, "isOA"); 
+            return l_value ? true : false; 
+        }
         var l_value = wps.PluginStorage.getItem("ShowOATabDocActive");
         wps.PluginStorage.setItem("ShowOATabDocActive", false); //初始化临时状态变量
         console.log("菜单：" + l_value);
@@ -385,7 +389,17 @@ function OnGetEnabled(control) {
 }
 
 function OnGetVisible(control) {
-    var eleId = typeof (control) == "object" ? control.Id : control;
+    wps.control=control;
+    var eleId;
+    if (typeof control == "object" && arguments.length == 1) { //针对Ribbon的按钮的
+        eleId = control.Id;
+    } else if (typeof control == "undefined" && arguments.length > 1) { //针对idMso的
+        eleId = arguments[1].Id;
+    } else if (typeof control == "boolean" && arguments.length > 1) { //针对checkbox的
+        eleId = arguments[1].Id;
+    } else if (typeof control == "number" && arguments.length > 1) { //针对combox的
+        eleId = arguments[2].Id;
+    }
     var l_value = false;
     //按照 OA文档传递过来的属性进行判断
     l_value = pShowRibbonGroupByOADocParam(eleId);
@@ -393,7 +407,16 @@ function OnGetVisible(control) {
 }
 
 function GetImage(control) {
-    var eleId = typeof (control) == "object" ? control.Id : control;
+    var eleId;
+    if (typeof control == "object" && arguments.length == 1) { //针对Ribbon的按钮的
+        eleId = control.Id;
+    } else if (typeof control == "undefined" && arguments.length > 1) { //针对idMso的
+        eleId = arguments[1].Id;
+    } else if (typeof control == "boolean" && arguments.length > 1) { //针对checkbox的
+        eleId = arguments[1].Id;
+    } else if (typeof control == "number" && arguments.length > 1) { //针对combox的
+        eleId = arguments[2].Id;
+    }
     switch (eleId) {
         case "btnSaveToServer": //保存到OA后台服务端
             return "./icon/w_Save.png";
@@ -406,7 +429,16 @@ function GetImage(control) {
 }
 
 function OnGetLabel(control) {
-    var eleId = typeof (control) == "object" ? control.Id : control;
+    var eleId;
+    if (typeof control == "object" && arguments.length == 1) { //针对Ribbon的按钮的
+        eleId = control.Id;
+    } else if (typeof control == "undefined" && arguments.length > 1) { //针对idMso的
+        eleId = arguments[1].Id;
+    } else if (typeof control == "boolean" && arguments.length > 1) { //针对checkbox的
+        eleId = arguments[1].Id;
+    } else if (typeof control == "number" && arguments.length > 1) { //针对combox的
+        eleId = arguments[2].Id;
+    }
     switch (eleId) {
         case "btnSaveAsFile":
             return "另存为本地";

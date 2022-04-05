@@ -17,7 +17,7 @@ var EnumDocLandMode = {
 
 //加载时会执行的方法
 function OnWPSWorkTabLoad(ribbonUI) {
-    wps.ribbonUI = ribbonUI;
+    // wps.ribbonUI = ribbonUI;
     if (typeof(wps.Enum) == "undefined") { // 如果没有内置枚举值
         wps.Enum = WPS_Enum;
     }
@@ -823,6 +823,10 @@ function pShowRibbonGroupByOADocParam(CtrlID) {
     }
     // 添加OA菜单判断
     if (CtrlID == "WPSWorkExtTab") {
+        if (wps.control.Context) { //拖拽的情况
+            let l_value = GetDocParamsValue(wps.control.Context.Document, "isOA"); 
+            return l_value ? true : false; 
+        }
         if(wps.WpsApplication().ActiveDocument){
             let l_value=GetDocParamsValue(wps.WpsApplication().ActiveDocument,"isOA");
             return l_value?true:false;
@@ -1340,6 +1344,7 @@ function OnGetLabel(control) {
  * @param {*} control  ：Ribbon 的按钮控件
  */
 function OnGetVisible(control) {
+    wps.control=control;
     var eleId;
     if (typeof control == "object" && arguments.length == 1) { //针对Ribbon的按钮的
         eleId = control.Id;

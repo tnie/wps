@@ -444,7 +444,7 @@ function InsertFile(url,bookmark,activeDoc,callback,callback1){
          //粘贴完成之后，设置页码
          if(pageInfomation.isHavePageNumber){
             var pageNum=pageInfomation.PageNumbers;
-            setPageNumber(pageNum.Left,pageNum.NumberStyle,pageNum.Text,pageNum.Size,pageNum.NameFarEast,pageNum.NameAscii,activeDoc)
+            setPageNumber(pageNum.Left,pageNum.NumberStyle,pageNum.Text,pageNum.Size,pageNum.Name,pageNum.NameBi,activeDoc)
         }
         if(pageInfomation.DifferentFirstPageHeaderFooter){
             doc.Sections.Item(doc.Sections.Count).Footers.Item(1).Range.Copy();
@@ -475,6 +475,11 @@ function DownloadFile(url, callback, fileName, isDelete) {
             var path = wps.Env.GetTempPath() + "/" + fileName;
             var reader = new FileReader();
             reader.onload = function () {
+                wps.FileSystem.Remove(path)//先删除掉本地已有的文档
+                if(wps.FileSystem.Exists(path)){//如果执行了删除，还是有该文档，说明文档已打开，直接提示并返回，不执行回调函数
+                    alert("已有相同名称的文档打开了");
+                    return ;
+                }
                 wps.FileSystem.writeAsBinaryString(path, reader.result);
                 callback(path);
                 isDelete && wps.FileSystem.Remove(path)
@@ -760,7 +765,6 @@ function toO(num,bs=16){
     }
 }
 
-//common.js中新增下面两个方法
 /**
  * 页脚信息分四种情况
  * 首页不同：
@@ -790,8 +794,8 @@ function toO(num,bs=16){
         pageInfomation.PageNumbers.Left=shape.Left;
         var textRange=shape.TextFrame.TextRange;
         pageInfomation.PageNumbers.Size=textRange.Font.Size;
-        pageInfomation.PageNumbers.NameFarEast=textRange.Font.NameFarEast;
-        pageInfomation.PageNumbers.NameAscii=textRange.Font.NameAscii;
+        pageInfomation.PageNumbers.NameBi=textRange.Font.NameBi;
+        pageInfomation.PageNumbers.Name=textRange.Font.Name;
         pageInfomation.PageNumbers.NumberStyle=footer.PageNumbers.NumberStyle;
         pageInfomation.PageNumbers.Text="X";
         var textArr=textRange.Text.split("");
@@ -861,7 +865,7 @@ function setOrientation(oriList,index,doc){
  * 
  * 
  */
-function setPageNumber(position,numberStyle,text,size,nameFarEast,nameAscii,doc,applyRange=1,activeSection){
+ function setPageNumber(position,numberStyle,text,size,name,nameBi,doc,applyRange=1,activeSection){
     var positionKey=-999998;//默认是左侧
     switch(position){
         case 1:
@@ -929,14 +933,11 @@ function setPageNumber(position,numberStyle,text,size,nameFarEast,nameAscii,doc,
     l_doc.ActiveWindow.Selection.Find.Execute("X");
     textRange.Fields.Add(l_doc.ActiveWindow.Selection.Range, wps.Enum.wdFieldPage, "", true);
     footer.PageNumbers.NumberStyle = numberStyle;
-    textRange.Font.Size=size;
-    if(nameFarEast){
-        textRange.Font.NameFarEast=nameFarEast
-    }
-    if(nameAscii){
-        textRange.Font.NameAscii=nameAscii
-    }
-    
+    textRange.Select()
+    l_doc.ActiveWindow.Selection.ShapeRange?l_doc.ActiveWindow.Selection.ShapeRange.TextFrame.TextRange.Font.NameBi=nameBi:"";
+    l_doc.ActiveWindow.Selection.ShapeRange?l_doc.ActiveWindow.Selection.ShapeRange.TextFrame.TextRange.Font.Name=name:"";
+    l_doc.ActiveWindow.Selection.ShapeRange?l_doc.ActiveWindow.Selection.ShapeRange.TextFrame.TextRange.Font.Size=size:"";
+    l_doc.ActiveWindow.ActivePane.View.SeekView=0;
     if(applyRange==1){
         for(var i=2;i<=l_doc.Sections.Count;i++){//从第二节开始，设置同前节
             l_doc.Sections.Item(i).Footers.Item(wps.Enum.wdHeaderFooterPrimary).LinkToPrevious=true;//取消同前节

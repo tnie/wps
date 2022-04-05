@@ -17,7 +17,7 @@ var EnumDocLandMode = {
 
 //加载时会执行的方法
 function OnWPSWorkTabLoad(ribbonUI) {
-    wps.ribbonUI = ribbonUI;
+    // wps.ribbonUI = ribbonUI;
 
     OnJSWorkInit(); //初始化文档事件(全局参数,挂载监听事件)
     activeTab(); // 激活OA助手菜单
@@ -117,6 +117,17 @@ function pShowRibbonGroupByOADocParam(CtrlID) {
     }
     // 添加OA菜单判断
     if (CtrlID == "WPSWorkExtTab") {
+        if (wps.control.Context)//拖拽的情况
+        {
+            var l_Params = wps.PluginStorage.getItem("/tmp/"+wps.control.Context.Caption);
+            var l_objParams = JSON.parse(l_Params);
+            if (typeof (l_objParams) == "undefined" || l_objParams == null)
+            return false;
+            var l_rtnValue = l_objParams["isOA"];
+            if (typeof (l_rtnValue) == "undefined" || l_rtnValue == null)
+            return false;
+            return l_objParams["isOA"] ? true : false;
+        }
         if(wps.Application.ActiveWorkbook){
             let l_value=GetDocParamsValue(wps.Application.ActiveWorkbook,"isOA");
             return l_value?true:false;
@@ -415,6 +426,7 @@ function OnGetEnabled(control) {
 }
 
 function OnGetVisible(control) {
+    wps.control=control;
     var eleId;
     if (typeof control == "object" && arguments.length == 1) { //针对Ribbon的按钮的
         eleId = control.Id;
