@@ -59,13 +59,13 @@
 
 ## 怎么用这个仓库呢？
 
-`git clone https://code.aliyun.com/zouyingfeng/wps.git`
+`git clone https://gitee.com/zouyf/wps.git`
 
 设置成了无需注册完全公开可复制的权限
 
 ## 想给我们建议？
 
-请通过[issues](https://code.aliyun.com/zouyingfeng/wps/issues)页面向我们提建议，我们会认真查看，并通过此仓库更新发布。
+请通过[issues](https://gitee.com/zouyf/wps/issues)页面向我们提建议，我们会认真查看，并通过此仓库更新发布。
 
 ## 想获取WPS的开发资料？
 
