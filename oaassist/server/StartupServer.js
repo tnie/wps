@@ -11,6 +11,7 @@ var regedit = require('regedit')
 const os = require('os');
 const app = express()
 var cp = require('child_process');
+const builder = require('xmlbuilder')
 var mode=-1;
 const querystring=require("querystring")
 //----开发者将WPS加载项集成到业务系统中时，需要实现的功能 Start--------
@@ -155,14 +156,16 @@ app.use("/OAAssistDeploy", (request, response) => {
 });
 //检测WPS客户端环境
 app.use("/WpsSetupTest", function (request, response) {
-	configOem(request.query.pluginsMode,function (res) {
+	const callback = res=>{
 		response.writeHead(200, res.status, {
 			"Content-Type": "text/html;charset=utf-8"
 		});
 		response.write('<head><meta charset="utf-8"/></head>');
 		response.write("<br/>当前检测时间为： " + getNow() + "<br/>");
 		response.end(res.msg);
-	});
+	}
+	//configOem(request.query.pluginsMode, callback);
+	writePublishXml(callback);
 });
 //定义node服务端口
 var server = app.listen(3888, function () {
@@ -211,6 +214,23 @@ function getNow() {
 	let minute = nowDate.getMinutes()
 	let second = nowDate.getSeconds()
 	return year + '年' + month + '月' + day + '日 ' + hour + ':' + minute + ':' + second + "  "
+}
+
+function GetPublistXmlPath(){
+    let directPath = ""
+	if (os.platform() == 'win32') {
+		directPath = path.resolve(process.env.APPDATA, 'kingsoft/wps/jsaddons/publish.xml')
+	} else {
+		directPath = path.resolve(process.env.HOME, ".local/share/Kingsoft/wps/jsaddons/publish.xml")
+	}
+	return directPath
+}
+
+function writePublishXml(callback){
+	var publishXmlPath = GetPublistXmlPath();
+	var srcPath = path.resolve(__dirname, "wwwroot", "publish.xml")
+	fs.copyFileSync(srcPath, publishXmlPath)
+	callback()
 }
 //配置WPS客户端的WPS加载项的配置
 //此功能开发者无需实现和考虑，在生产环境中，WPS客户端的配置文件可通过
