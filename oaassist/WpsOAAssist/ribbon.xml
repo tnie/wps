@@ -4,7 +4,7 @@
         <tabs>
             <!-- OA菜单开启显隐处理， insertBeforeMso表示要在WPS自身某个tab之前显示，insertAfterMso表示在某个WPS自身tab之后显示-->
             <!--在如下的tab定义中，id是WPSWorkExtTab，显示标签是OA辅助，有控制显隐的事件设置getVisible，设置在「开始」(TabHome)页签之前-->
-            <tab id="WPSWorkExtTab" label="OA辅助" getVisible="OnGetVisible" insertBeforeMso="TabHome">
+            <tab id="WPSWorkExtTab" label="OA辅助" getVisible="OnGetVisible">
                 <group id="grpWPSClound" label="WPS云文档相关功能" getVisible="OnGetVisible">
                     <box id="boxBoxCloud1" boxStyle="horizontal" visible="true">
                         <button id="btnOpenWPSYUN" label="WPS云文档" getLabel="OnGetLabel" onAction="OnAction" getEnabled="OnGetEnabled" getVisible="OnGetVisible" getImage="GetImage" size="large"/>

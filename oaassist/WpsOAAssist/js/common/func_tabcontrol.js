@@ -820,6 +820,8 @@ function pShowRibbonGroupByOADocParam(CtrlID) {
     }
     // 添加OA菜单判断
     if (CtrlID == "WPSWorkExtTab") {
+        return true; //业务系统根据实际情况自己来判断
+        /*
         if(wps.WpsApplication().ActiveDocument){
             let l_value=GetDocParamsValue(wps.WpsApplication().ActiveDocument,"isOA");
             return l_value?true:false;
@@ -828,6 +830,7 @@ function pShowRibbonGroupByOADocParam(CtrlID) {
         wps.PluginStorage.setItem(constStrEnum.ShowOATabDocActive, false); //初始化临时状态变量
         console.log("菜单：" + l_value);
         return l_value;
+        */
     }
     return true;
 }

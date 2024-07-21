@@ -114,10 +114,13 @@ function pShowRibbonGroupByOADocParam(CtrlID) {
     }
     // 添加OA菜单判断
     if (CtrlID == "WPSWorkExtTab") {
+        return true; //业务系统根据实际情况自己来判断
+        /*
         var l_value = wps.PluginStorage.getItem("ShowOATabDocActive");
         wps.PluginStorage.setItem("ShowOATabDocActive", false); //初始化临时状态变量
         console.log("菜单：" + l_value);
         return l_value;
+        */
     }
 
     return true;
