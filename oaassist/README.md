@@ -38,12 +38,12 @@
 3. 进入server目录下
 4. npm config set registry http://registry.npm.taobao.org //切换npm淘宝镜像源
 5. npm install //安装相应依赖
-6. node StartupServer //启动demo的服务
+6. node StartupServer.js //启动demo的服务
 
 
 ### WPS重要地址
 
-* WPS配置文件oem.ini地址
+* WPS配置文件oem.ini地址(仅专业版)
 ```
     oem.ini目录地址：
     windows:
@@ -69,15 +69,16 @@
 
 ### 调试器开启和使用
 
-    1. 配置oem.ini,在support栏下配置JsApiShowWebDebugger=true
-    2. linux机器上需要使用quickstartoffice restart重启WPS
+    1. 首先安装好wpsjs开发工具包，安装命令：npm install -g wpsjs,  通过wpsjs --help可查看wpsjs工具包的常见命令
+    2. 命令行进入WpsOAAssist目录，执行wpsjs debug后，会自动启动wps,显示调试器的按钮
+    3. linux机器上需要使用quickstartoffice restart重启WPS
         普通linux操作系统：
             电脑终端执行quickstartoffice restart
         uos操作系统:
             电脑终端执行 cd /opt/apps/cn.wps.wps-office-pro/files/bin
             ./quickstartoffice restart
-    3. WPS打开后，在有文档的情况下按alt+F12(index.html页面的调试器)
-    4. ShowDialog和Taskpane页面的调试器，点击该弹窗或者任务窗格，按F12
+    4. WPS打开后，在有文档的情况下按alt+F12(index.html页面的调试器)
+    5. ShowDialog和Taskpane页面的调试器，点击该弹窗或者任务窗格，按F12
     如果无法打开调试器，那么说明加载项加载失败了，排查加载项管理文件是否生成，加载项管理文件中的加载项地址是否正确
 
 
@@ -112,10 +113,10 @@
 
 ### 注意事项
 
-* 本工程只是演示demo
+* 本工程只是演示demo, 视频资料演示介绍：https://www.toutiao.com/article/7393963729227874855
 * 我们建议您修改示例代码结合具体的应用场景部署到服务器上面，这样更能够体现OA助手集成的应用场景
 * 为了保护代码，建议代码上线前进行混淆
-* 使用该工程的时候，必须要安装WPS专业版，请咨询QQ：3253920855
+* 使用该工程的时候，请咨询QQ：156411203
 
 
         
