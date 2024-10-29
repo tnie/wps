@@ -189,6 +189,7 @@ EtMainWindow::EtMainWindow(QWidget *parent)
     initApp();
     openDoc();
     hideToolBar();
+    setRangeValue();
 }
 
 EtMainWindow::~EtMainWindow()
@@ -963,19 +964,22 @@ void EtMainWindow::setRangeValue()
 			return;
 
 		ks_stdptr<IRange> spCellsRange;
-		KComVariant cell1(__X("A1"));
-		KComVariant cell2(__X("D10"));
-		//获得单元格A1:D10的区域
+        KComVariant cell1(__X("B2"));
+        KComVariant cell2(__X("B2"));
+        //获得单元格B2:B2的区域
 		HRESULT hr = spWorkSheet->get_Range(cell1, cell2,(Range**) &spCellsRange);
 		if (hr != S_OK || !spCellsRange)
 		{
-			QMessageBox message(QMessageBox::NoIcon, QString::fromUtf8("提示"), QString::fromUtf8("获取A1:D10失败"));
+            QMessageBox message(QMessageBox::NoIcon, QString::fromUtf8("提示"), QString::fromUtf8("获取B2:B2失败"));
 			message.exec();
 			return;
 		}
 		KComVariant varRangeValueDataType(xlRangeValueDefault);
-		KComVariant varValue(__X("kingsoft"));
+        KComVariant varValue(__X("2024"));
 		spCellsRange->put_Value(varRangeValueDataType, ET_LCID, varValue);
+        BSTR bstrArea = SysAllocString(__X("A2:W50"));
+        spWorkSheet->put_ScrollArea(bstrArea);
+        SysFreeString(bstrArea);
 	}
 	m_mainArea->setFocus();
 }
