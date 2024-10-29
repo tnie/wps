@@ -924,9 +924,8 @@ function DoInsertWaterToDoc(){
             shapeRange.WrapFormat.Type = 3;                 
             shapeRange.RelativeHorizontalPosition = 0;      
             shapeRange.RelativeVerticalPosition = 0;        
-            shapeRange.Left = '-999995';                   
-            shapeRange.Top = '-999995';                     
-           
+            shapeRange.Left = -999995;                   
+            shapeRange.Top = -999995;                                
         }                  /* WdShapePosition枚举 wdShapeCenter 形状的位置在中央 */
         selection.GoTo(1, 1, 1);
         app.ActiveWindow.ActivePane.View.SeekView=0;
@@ -1038,6 +1037,7 @@ function OnAction(control) {
             break;
         case "btnInsertWater":
             DoInsertWaterToDoc()
+            break;
         case "btnInsertDate": //插入日期
             OnInsertDateClicked();
             break;
