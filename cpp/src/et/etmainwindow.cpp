@@ -25,12 +25,12 @@
 ** POSSIBILITY OF SUCH DAMAGE.
 */
 #include "etmainwindow.h"
-#include "mainwindow.h"
 #include "variant.h"
 #include <QDebug>
 #include <QTextCodec>
 #include <QMessageBox>
 #include <QKeyEvent>
+#include <QFileDialog>
 #if (QT_VERSION >= QT_VERSION_CHECK(5,0,0))
 #include <QWindow>
 #endif

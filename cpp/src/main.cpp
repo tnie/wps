@@ -26,8 +26,7 @@
 */
 #include <QApplication>
 #include <QTranslator>
-#include "mainwindow.h"
-#include "buttonlistwnd.h"
+#include "et/etmainwindow.h"
 
 int main(int argc, char *argv[])
 {
@@ -35,7 +34,7 @@ int main(int argc, char *argv[])
 	QTranslator translator(qApp);
 	translator.load(":/translations/qt_zh_CN.qm");
 	qApp->installTranslator(&translator);
-	MainWindow window;
+    EtMainWindow window;
 	window.resize(1600, 800);
 	window.show();
 	return app.exec();
