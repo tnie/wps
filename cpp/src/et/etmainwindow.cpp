@@ -186,6 +186,9 @@ EtMainWindow::EtMainWindow(QWidget *parent)
 	m_hlayout->setStretchFactor(m_mainArea,140);
 	setLayout(m_hlayout);
 	adjustSize();
+    initApp();
+    openDoc();
+    hideToolBar();
 }
 
 EtMainWindow::~EtMainWindow()
@@ -261,7 +264,8 @@ void EtMainWindow::openDoc()
 {
 	if (m_spWorkbooks)
 	{
-		QString filePath = QFileDialog::getOpenFileName((QWidget*)parent(), QString::fromUtf8("打开文档"));
+//		QString filePath = QFileDialog::getOpenFileName((QWidget*)parent(), QString::fromUtf8("打开文档"));
+        const QString filePath("/home/niel/src/0/wps/cpp/src/11.xlt");
 		ks_bstr kstrFilename(filePath.utf16());
 		ks_stdptr<_Workbook> spWorkbook;
 		KComVariant vars[12];
@@ -346,22 +350,39 @@ void EtMainWindow::hideToolBar()
 	"Borders"							边框
 	*/
 	static bool enable = false;
+    // 此参数代表区域语言ID），默认传递2052（即简体中文）即可
+    static const long lcid = 2052;
 	if (m_spApplication)
 	{
 		ks_stdptr<ksoapi::_CommandBars> spCommandBars;
 		m_spApplication->get_CommandBars((ksoapi::CommandBars**)&spCommandBars);
+        m_spApplication->put_DisplayFullScreen(lcid, VARIANT_TRUE);
 		if (spCommandBars)
 		{
 			ks_stdptr<ksoapi::CommandBar> spCommandBar;
-			KComVariant varIndex(__X("Standard"));
+            KComVariant varIndex(__X("Full Screen"));
 			spCommandBars->get_Item(varIndex, &spCommandBar);
 			if (spCommandBar)
 			{
 				spCommandBar->put_Visible(enable ? VARIANT_TRUE : VARIANT_FALSE);
-				enable = !enable;
+//				enable = !enable;
 			}
 		}
 	}
+    if(m_spApplication)
+    {
+        m_spApplication->put_DisplayAlerts(lcid, VARIANT_FALSE);
+        m_spApplication->put_DisplayStatusBar(lcid, VARIANT_FALSE);
+        m_spApplication->put_DisplayFormulaBar(lcid, VARIANT_FALSE);
+        m_spApplication->put_DisplayScrollBars(lcid, VARIANT_FALSE);
+        ks_stdptr<etapi::IWindow> spWindow;
+        m_spApplication->get_ActiveWindow((Window**)&spWindow);
+        if(spWindow)
+        {
+            spWindow->put_DisplayHeadings(VARIANT_FALSE);
+            spWindow->put_DisplayWorkbookTabs(VARIANT_FALSE);
+        }
+    }
 	m_mainArea->setFocus();
 }
 

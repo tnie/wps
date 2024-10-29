@@ -41,8 +41,9 @@ MainWindow::MainWindow(QWidget *parent)
 	m_wps = new WPSMainWindow(this);
 	m_et = new EtMainWindow(this);
 	m_wpp = new WPPMainWindow(this);
-	m_ui->tabWidget->addTab(m_wps, "WPS");
+//	m_ui->tabWidget->addTab(m_wps, "WPS");
 	m_ui->tabWidget->addTab(m_et, "ET");
+    m_curIndex = (int)appEt;
 	m_ui->tabWidget->addTab(m_wpp, "WPP");
 	m_ui->treeWidget->initButtonTree(m_curIndex);
 	setWindowTitle("WPS C++ DEMO");
