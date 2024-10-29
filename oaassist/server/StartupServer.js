@@ -220,6 +220,9 @@ function GetPublistXmlPath(){
     let directPath = ""
 	if (os.platform() == 'win32') {
 		directPath = path.resolve(process.env.APPDATA, 'kingsoft/wps/jsaddons/publish.xml')
+	} else if (os.platform() == 'darwin') {
+		directPath = path.resolve(process.env.HOME, '.kingsoft/wps/jsaddons/publish.xml')
+		// directPath = path.resolve(process.env.HOME, 'Library/Containers/com.kingsoft.wpsoffice.mac/Data/.kingsoft/wps/jsaddons/publish.xml')
 	} else {
 		directPath = path.resolve(process.env.HOME, ".local/share/Kingsoft/wps/jsaddons/publish.xml")
 	}

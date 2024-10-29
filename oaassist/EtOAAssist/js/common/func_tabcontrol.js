@@ -346,7 +346,7 @@ function OnAction(control) {
     } else if (typeof control == "number" && arguments.length > 1) { //针对combox的
         eleId = arguments[2].Id;
     }
-    switch (strId) {
+    switch (eleId) {
         case "btnSaveToServer":
             OnBtnSaveToServer();
             break;
